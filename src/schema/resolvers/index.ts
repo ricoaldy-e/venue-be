@@ -10,6 +10,7 @@ import { operatingHourResolvers } from "./operatingHourResolver.js"
 import { fieldImageResolvers, stadionImageResolvers } from "./uploadToMinioResolver.js"
 import { facilityResolvers } from "./facilityResolver.js"
 import { dashboardResolvers } from "./dashboardResolvers.js"
+import { verifyTurnstileToken } from "../../lib/verifyTurnstileToken.js"
 
 type ResolverContext = {
   prisma: PrismaClient
@@ -44,7 +45,14 @@ const resolvers = {
     ...stadionImageResolvers.Mutation,
     ...fieldImageResolvers.Mutation,
     ...facilityResolvers.Mutation,
-    login: async (_: unknown, { email, password }: { email: string; password: string }, { prisma }: ResolverContext) => {
+    login: async (_: unknown, { email, password, turnstile }: { email: string; password: string, turnstile: string }, { prisma }: ResolverContext) => {
+      const result = await verifyTurnstileToken(turnstile)
+      if (!result.success) {
+        throw new GraphQLError("Invalid turnstile token", {
+          extensions: {code: "UNAUTHENTICATED"}
+        })
+      }
+
       const admin = await prisma.admin.findUnique({
         where: { email },
       })

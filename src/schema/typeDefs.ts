@@ -108,6 +108,14 @@ export default gql`
     closeHour: Int!
   }
 
+  type Option {
+    id: ID!
+    name: String!
+    description: String!
+    email: String!
+    nohp: String!
+  }
+
   type AdminLog {
     id: ID!
     adminId: Int!
@@ -180,6 +188,7 @@ export default gql`
     bookings(stadionId: ID, date: DateTime): [Booking!]
     booking(bookingCode: String!): Booking
     operatingHours: OperatingHour
+    options: Option
     me: Admin
     facilities: [Facility!]
     facility(facilityId: ID!): Facility
@@ -199,7 +208,7 @@ export default gql`
   }
 
   type Mutation {
-    login(email: String!, password: String!): AuthPayload!
+    login(email: String!, password: String!, turnstile: String!): AuthPayload!
     logout: Boolean!
 
     createStadion(
@@ -272,6 +281,20 @@ export default gql`
       openHour: Int!
       closeHour: Int!
     ): OperatingHour
+
+    createOption(
+      name: String!
+      description: String!
+      email: String!
+      nohp: String!
+    ): Option
+
+    updateOption(
+      name: String!
+      description: String!
+      email: String!
+      nohp: String!
+    ): Options
 
     uploadStadionImages(
       stadionId: Int!
