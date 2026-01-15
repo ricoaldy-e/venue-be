@@ -114,6 +114,7 @@ export default gql`
     description: String!
     email: String!
     nohp: String!
+    address: String!
   }
 
   type AdminLog {
@@ -287,6 +288,7 @@ export default gql`
       description: String!
       email: String!
       nohp: String!
+      address: String!
     ): Option
 
     updateOption(
@@ -294,7 +296,8 @@ export default gql`
       description: String!
       email: String!
       nohp: String!
-    ): Options
+      address: String!
+    ): Option
 
     uploadStadionImages(
       stadionId: Int!
