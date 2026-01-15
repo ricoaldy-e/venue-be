@@ -4,57 +4,59 @@ import 'dayjs/locale/id'
 dayjs.locale('id')
 
 interface BookingDetail {
-  fieldId: number
-  bookingDate: Date | string
-  startHour: number
-  pricePerHour: number
-  subtotal: number
-  Field?: {
-    name: string
-    Stadion?: {
-      name: string
-      mapUrl: string
+    fieldId: number
+    bookingDate: Date | string
+    startHour: number
+    pricePerHour: number
+    subtotal: number
+    Field?: {
+        name: string
+        Stadion?: {
+            name: string
+            mapUrl: string
+        }
     }
-  }
 }
 
 interface BookingReminderData {
-  bookingCode: string
-  name: string
-  email: string
-  contact: string
-  institution?: string
-  isAcademic: boolean
-  totalPrice: number
-  paymentStatus: string
-  details: BookingDetail[]
+    bookingCode: string
+    name: string
+    email: string
+    contact: string
+    institution?: string
+    isAcademic: boolean
+    totalPrice: number
+    paymentStatus: string
+    details: BookingDetail[]
+    contactEmail: string
+    contactPhone: string
 }
 
 export const generateBookingReminderEmail = (booking: BookingReminderData): string => {
-  const detailsByDate = booking.details.reduce((acc, detail) => {
-    const dateKey = dayjs(detail.bookingDate).format('YYYY-MM-DD')
-    if (!acc[dateKey]) {
-      acc[dateKey] = []
-    }
-    acc[dateKey].push(detail)
-    return acc
-  }, {} as Record<string, typeof booking.details>)
+    const detailsByDate = booking.details.reduce((acc, detail) => {
+        const dateKey = dayjs(detail.bookingDate).format('YYYY-MM-DD')
+        if (!acc[dateKey]) {
+            acc[dateKey] = []
+        }
+        acc[dateKey].push(detail)
+        return acc
+    }, {} as Record<string, typeof booking.details>)
 
-  const firstDetail = booking.details[0]
-  const stadionName = firstDetail?.Field?.Stadion?.name || 'Stadion'
-  const fieldName = firstDetail?.Field?.name || 'Lapangan'
-  const mapUrl = firstDetail?.Field?.Stadion?.mapUrl || '#'
+    const firstDetail = booking.details[0]
+    const stadionName = firstDetail?.Field?.Stadion?.name || 'Stadion'
+    const fieldName = firstDetail?.Field?.name || 'Lapangan'
+    const mapUrl = firstDetail?.Field?.Stadion?.mapUrl || '#'
 
-  const tomorrowDate = dayjs(firstDetail?.bookingDate).format('dddd, DD MMMM YYYY')
-  
-  const bookingDetailsHtml = Object.entries(detailsByDate).map(([dateKey, details]) => {
-    const formattedDate = dayjs(dateKey).format('dddd, DD MMMM YYYY')
-    const timeSlots = details
-      .sort((a, b) => a.startHour - b.startHour)
-      .map(d => `${String(d.startHour).padStart(2, '0')}:00-${String(d.startHour + 1).padStart(2, '0')}:00`)
-      .join(', ')
-    
-    return `
+    const tomorrowDate = dayjs(firstDetail?.bookingDate).format('dddd, DD MMMM YYYY')
+
+    const bookingDetailsHtml = Object.entries(detailsByDate).map(([dateKey, details]) => {
+        const formattedDate = dayjs(dateKey).format('dddd, DD MMMM YYYY')
+        const timeSlots = details
+            .sort((a, b) => a.startHour - b.startHour)
+            .map(d => `${String(d.startHour).padStart(2, '0')}:00-${String(d.startHour + 1).padStart(2, '0')}:00`)
+            .join(', ')
+
+        return `
       <tr>
         <td style="padding: 8px 0; color: #374151; font-size: 15px; line-height: 1.6;">
           <strong style="color: #1f2937;">${formattedDate}</strong><br>
@@ -62,9 +64,9 @@ export const generateBookingReminderEmail = (booking: BookingReminderData): stri
         </td>
       </tr>
     `
-  }).join('')
+    }).join('')
 
-  return `
+    return `
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -189,8 +191,8 @@ export const generateBookingReminderEmail = (booking: BookingReminderData): stri
                                     <td style="background-color: #f8fafc; padding: 20px; border-radius: 6px; text-align: center;">
                                         <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 14px; font-weight: 600;">Perlu Bantuan?</p>
                                         <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                                            +62 851-6566-0339<br>
-                                            helpdesk@live.undip.ac.id
+                                            ${booking.contactPhone}<br>
+                                            ${booking.contactEmail}
                                         </p>
                                     </td>
                                 </tr>

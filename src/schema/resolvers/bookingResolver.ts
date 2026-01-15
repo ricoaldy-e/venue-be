@@ -62,7 +62,7 @@ export const bookingResolvers = {
     bookings: async (_: unknown, args: BookingArgs, { prisma }: ResolverContext) => {
       const filters: any = {}
 
-      if(args.stadionId){
+      if (args.stadionId) {
         filters.details = {
           some: {
             Field: {
@@ -75,30 +75,30 @@ export const bookingResolvers = {
       if (args.date) {
         const selectedDate = new Date(args.date)
         const dateFilter = {
-            bookingDate: {
-              gte: new Date(selectedDate.setHours(0, 0, 0, 0)),
-              lt: new Date(selectedDate.setHours(23, 59, 59, 999)),
-            }
+          bookingDate: {
+            gte: new Date(selectedDate.setHours(0, 0, 0, 0)),
+            lt: new Date(selectedDate.setHours(23, 59, 59, 999)),
+          }
         }
 
         if (filters.details) {
-            filters.details.some = { ...filters.details.some, ...dateFilter }
+          filters.details.some = { ...filters.details.some, ...dateFilter }
         } else {
-            filters.details = { some: dateFilter }
+          filters.details = { some: dateFilter }
         }
 
       } else if (args.startDate && args.endDate) {
         const rangeFilter = {
-            bookingDate: {
-              gte: new Date(args.startDate),
-              lte: new Date(args.endDate)
-            }
+          bookingDate: {
+            gte: new Date(args.startDate),
+            lte: new Date(args.endDate)
+          }
         }
 
         if (filters.details) {
-            filters.details.some = { ...filters.details.some, ...rangeFilter }
+          filters.details.some = { ...filters.details.some, ...rangeFilter }
         } else {
-            filters.details = { some: rangeFilter }
+          filters.details = { some: rangeFilter }
         }
       }
       return prisma.booking.findMany({
@@ -241,6 +241,10 @@ export const bookingResolvers = {
           },
         })
 
+        const option = await prisma.option.findFirst({ where: { id: 1 } })
+        const contactEmail = option?.email ?? 'helpdesk@live.undip.ac.id'
+        const contactPhone = option?.nohp ?? '+62 851-6566-0339'
+
         try {
           const emailHtml = generateBookingConfirmationEmail({
             bookingCode: booking.bookingCode,
@@ -251,6 +255,8 @@ export const bookingResolvers = {
             isAcademic: booking.isAcademic,
             totalPrice: booking.totalPrice,
             details: booking.details,
+            contactEmail,
+            contactPhone,
           })
 
           await sendEmail({
@@ -280,7 +286,7 @@ export const bookingResolvers = {
       const validated = await updateBookingSchema.validate(args, { abortEarly: false })
       const { bookingCode, status } = validated
       if (status === 'CANCELLED') {
-        const bookingBeforeCancel = await prisma.booking.findUnique({ 
+        const bookingBeforeCancel = await prisma.booking.findUnique({
           where: { bookingCode },
           include: {
             details: {
@@ -294,15 +300,15 @@ export const bookingResolvers = {
             }
           }
         })
-        
+
         if (!bookingBeforeCancel) throw new Error('Booking not found')
 
-        const [ , updated ] = await prisma.$transaction([
+        const [, updated] = await prisma.$transaction([
           prisma.bookingDetail.deleteMany({ where: { bookingId: bookingBeforeCancel.id } }),
-          prisma.booking.update({ 
-            where: { bookingCode }, 
-            data: { status }, 
-            include: { 
+          prisma.booking.update({
+            where: { bookingCode },
+            data: { status },
+            include: {
               details: {
                 include: {
                   Field: {
@@ -311,10 +317,14 @@ export const bookingResolvers = {
                     }
                   }
                 }
-              } 
-            } 
+              }
+            }
           }),
         ])
+
+        const option = await prisma.option.findFirst({ where: { id: 1 } })
+        const contactEmail = option?.email ?? 'helpdesk@live.undip.ac.id'
+        const contactPhone = option?.nohp ?? '+62 851-6566-0339'
 
         try {
           const emailHtml = generateBookingCancellationEmail({
@@ -324,6 +334,8 @@ export const bookingResolvers = {
             institution: bookingBeforeCancel.institution || undefined,
             isAcademic: bookingBeforeCancel.isAcademic,
             details: bookingBeforeCancel.details,
+            contactEmail,
+            contactPhone,
           })
 
           await sendEmail({
