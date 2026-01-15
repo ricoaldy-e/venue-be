@@ -3,7 +3,7 @@ import * as yup from "yup"
 const bookingDetailSchema = yup.object({
   fieldId: yup.number().required(),
   bookingDate: yup.date().required(),
-  startHour: yup.number().min(8, "Minumun jam 8").max(21, "Maksimum jam 21").required(),
+  startHour: yup.number().required("Jam mulai harus diisi"),
   pricePerHour: yup.number(),
   subtotal: yup.number(),
 })

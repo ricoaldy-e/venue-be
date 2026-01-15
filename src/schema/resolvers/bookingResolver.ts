@@ -6,10 +6,17 @@ import { createBookingSchema, updateBookingSchema, updatePaymenStatusSchema, } f
 import Upload from "graphql-upload/Upload.mjs"
 import { uploadToMinio } from "../../lib/uploadToMinio.js"
 import { minioClient, BUCKET } from "../../lib/minioClient.js"
+import { sendEmail } from "../../lib/email/emailService.js"
+import { generateBookingConfirmationEmail } from "../../lib/email/templates/bookingConfirmation.js"
+import { generateBookingCancellationEmail } from "../../lib/email/templates/bookingCancellation.js"
 
 const DEFAULT_ACADEMIC_SURAT_URL = process.env.DEFAULT_ACADEMIC_SURAT_URL ?? "https://example.com/uploads/placeholder-surat.pdf"
 interface BookingArgs {
   bookingCode: string
+  stadionId?: number | string
+  date?: Date
+  startDate?: Date
+  endDate?: Date
 }
 
 interface CreateBookingArgs {
@@ -52,7 +59,7 @@ type ResolverContext = {
 
 export const bookingResolvers = {
   Query: {
-    bookings: async (_: unknown, args: {stadionId?: number | string, date?: Date}, { prisma }: ResolverContext) => {
+    bookings: async (_: unknown, args: BookingArgs, { prisma }: ResolverContext) => {
       const filters: any = {}
 
       if(args.stadionId){
@@ -65,17 +72,33 @@ export const bookingResolvers = {
         }
       }
 
-      if(args.date){
+      if (args.date) {
         const selectedDate = new Date(args.date)
-        filters.details = {
-          ...filters.details,
-          some: {
-            ...filters.details?.some,
+        const dateFilter = {
             bookingDate: {
               gte: new Date(selectedDate.setHours(0, 0, 0, 0)),
               lt: new Date(selectedDate.setHours(23, 59, 59, 999)),
             }
-          }
+        }
+
+        if (filters.details) {
+            filters.details.some = { ...filters.details.some, ...dateFilter }
+        } else {
+            filters.details = { some: dateFilter }
+        }
+
+      } else if (args.startDate && args.endDate) {
+        const rangeFilter = {
+            bookingDate: {
+              gte: new Date(args.startDate),
+              lte: new Date(args.endDate)
+            }
+        }
+
+        if (filters.details) {
+            filters.details.some = { ...filters.details.some, ...rangeFilter }
+        } else {
+            filters.details = { some: rangeFilter }
         }
       }
       return prisma.booking.findMany({
@@ -112,9 +135,7 @@ export const bookingResolvers = {
         throw new Error("Detail booking harus diisi")
       }
 
-      // If a suratFile Upload object is provided, resolve and upload it to MinIO
       if (suratFile) {
-        // suratFile may be a promise-like upload object or a FileUpload with .promise
         let resolvedFile: any
         try {
           if (typeof (suratFile as any).promise === 'function' || (suratFile as any).promise) {
@@ -143,12 +164,28 @@ export const bookingResolvers = {
       const bookingCode = `DS-${uuidv4().split("-")[0]?.toUpperCase()}`
       const today = dayjs().startOf("day")
 
+      const operatingHour = await prisma.operatingHour.findUnique({
+        where: { id: 1 },
+      })
+
+      const openHour = operatingHour?.openHour ?? 8
+      const closeHour = operatingHour?.closeHour ?? 21
+      const minBookingHour = openHour
+      const maxBookingHour = closeHour - 1
+
       const detailPayload = await Promise.all(
         details.map(async (item) => {
           const bookingDate = dayjs(item.bookingDate)
 
           if (bookingDate.isBefore(today.add(1, "day"))) {
             throw new Error("Maksimal booking harus dilakukan minimal H-1")
+          }
+
+          if (item.startHour < minBookingHour || item.startHour > maxBookingHour) {
+            throw new Error(
+              `Jam mulai booking harus antara ${minBookingHour}:00 - ${maxBookingHour}:00 ` +
+              `(Stadion operasional: ${openHour}:00 - ${closeHour}:00)`
+            )
           }
 
           const field = await prisma.field.findUnique({
@@ -160,8 +197,8 @@ export const bookingResolvers = {
             throw new Error("Field tidak ditemukan")
           }
 
-          const pricePerHour = item.pricePerHour ?? field.pricePerHour
-          const subtotal = item.subtotal ?? pricePerHour
+          const pricePerHour = item.pricePerHour ?? field.pricePerHour ?? 0
+          const subtotal = item.subtotal ?? (pricePerHour * 1)
 
           return {
             fieldId: item.fieldId,
@@ -192,18 +229,45 @@ export const bookingResolvers = {
             },
           },
           include: {
-            details: true,
+            details: {
+              include: {
+                Field: {
+                  include: {
+                    Stadion: true
+                  }
+                }
+              }
+            },
           },
         })
 
+        try {
+          const emailHtml = generateBookingConfirmationEmail({
+            bookingCode: booking.bookingCode,
+            name: booking.name,
+            email: booking.email,
+            contact: booking.contact,
+            institution: booking.institution || undefined,
+            isAcademic: booking.isAcademic,
+            totalPrice: booking.totalPrice,
+            details: booking.details,
+          })
+
+          await sendEmail({
+            to: booking.email,
+            subject: `Konfirmasi Booking - ${booking.bookingCode} | VENUE UNDIP`,
+            html: emailHtml,
+          })
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError)
+        }
+
         return booking
       } catch (err) {
-        // attempt to cleanup uploaded file if present
         if (typeof uploadedObjectName === 'string' && uploadedObjectName) {
           try {
             await minioClient.removeObject(BUCKET, uploadedObjectName)
           } catch (removeErr) {
-            // log and continue to throw original error
             console.error('Failed to remove uploaded object after DB error:', removeErr)
           }
         }
@@ -215,17 +279,61 @@ export const bookingResolvers = {
 
       const validated = await updateBookingSchema.validate(args, { abortEarly: false })
       const { bookingCode, status } = validated
-      // If booking is being cancelled, release all booked details so others can book the same slots.
       if (status === 'CANCELLED') {
-        // Find booking first
-        const booking = await prisma.booking.findUnique({ where: { bookingCode }, select: { id: true } })
-        if (!booking) throw new Error('Booking not found')
+        const bookingBeforeCancel = await prisma.booking.findUnique({ 
+          where: { bookingCode },
+          include: {
+            details: {
+              include: {
+                Field: {
+                  include: {
+                    Stadion: true
+                  }
+                }
+              }
+            }
+          }
+        })
+        
+        if (!bookingBeforeCancel) throw new Error('Booking not found')
 
-        // Use a transaction: delete details, then update booking status
         const [ , updated ] = await prisma.$transaction([
-          prisma.bookingDetail.deleteMany({ where: { bookingId: booking.id } }),
-          prisma.booking.update({ where: { bookingCode }, data: { status }, include: { details: true } }),
+          prisma.bookingDetail.deleteMany({ where: { bookingId: bookingBeforeCancel.id } }),
+          prisma.booking.update({ 
+            where: { bookingCode }, 
+            data: { status }, 
+            include: { 
+              details: {
+                include: {
+                  Field: {
+                    include: {
+                      Stadion: true
+                    }
+                  }
+                }
+              } 
+            } 
+          }),
         ])
+
+        try {
+          const emailHtml = generateBookingCancellationEmail({
+            bookingCode: bookingBeforeCancel.bookingCode,
+            name: bookingBeforeCancel.name,
+            email: bookingBeforeCancel.email,
+            institution: bookingBeforeCancel.institution || undefined,
+            isAcademic: bookingBeforeCancel.isAcademic,
+            details: bookingBeforeCancel.details,
+          })
+
+          await sendEmail({
+            to: bookingBeforeCancel.email,
+            subject: `Pembatalan Booking - ${bookingBeforeCancel.bookingCode} | VENUE UNDIP`,
+            html: emailHtml,
+          })
+        } catch (emailError) {
+          console.error('Failed to send cancellation email:', emailError)
+        }
 
         return updated
       }

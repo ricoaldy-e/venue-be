@@ -9,6 +9,8 @@ import { print, type DocumentNode } from "graphql"
 import typeDefs from "./schema/typeDefs.js"
 import resolvers from "./schema/resolvers/index.js"
 import { buildContext } from "./lib/context.js"
+import { initializeEmailService } from "./lib/email/emailService.js"
+import { initializeBookingReminderScheduler } from "./schedulers/bookingReminderScheduler.js"
 
 const app = express()
 const server = new ApolloServer({
@@ -30,7 +32,6 @@ const normalizeGraphQLBody: express.RequestHandler = (req, _res, next) => {
       try {
         entry.variables = JSON.parse(entry.variables)
       } catch {
-        // Keep original string so Apollo can surface a useful error
       }
     }
 
@@ -38,7 +39,6 @@ const normalizeGraphQLBody: express.RequestHandler = (req, _res, next) => {
       try {
         entry.extensions = JSON.parse(entry.extensions)
       } catch {
-        // Same reasoning as above
       }
     }
 
@@ -49,7 +49,6 @@ const normalizeGraphQLBody: express.RequestHandler = (req, _res, next) => {
       try {
         entry.query = print(entry.query as DocumentNode)
       } catch {
-        // Fall back to default Apollo error if conversion fails
       }
     }
   }
@@ -92,6 +91,10 @@ app.use(
 )
 
 const port = process.env.PORT || 4000
+
+initializeEmailService()
+
+initializeBookingReminderScheduler()
 
 app.listen(port, () => {
   console.log(`Server ready at http://localhost:${port}/graphql`)

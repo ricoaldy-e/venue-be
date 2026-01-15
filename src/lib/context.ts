@@ -22,7 +22,6 @@ export function buildContext(req: Request): GraphQLContext {
       admin,
     }
   } catch (error) {
-    // Invalid or expired token, treat as anonymous access
     return {
       prisma,
       admin: null,

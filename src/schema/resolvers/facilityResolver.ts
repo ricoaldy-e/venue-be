@@ -68,8 +68,10 @@ export const facilityResolvers = {
 
       return prisma.facility.create({
         data: {
-          name: validated.name,
-          icon: validated.icon,
+          name: validated.name!,
+          ...(('icon' in validated && (validated as any).icon != null)
+            ? { icon: (validated as any).icon }
+            : {}),
         },
       });
     },
@@ -87,8 +89,10 @@ export const facilityResolvers = {
       return prisma.facility.update({
         where: { id: Number(validated.facilityId) },
         data: {
-          name: validated.name,
-          icon: validated.icon,
+          name: validated.name!,
+          ...(('icon' in validated && (validated as any).icon != null)
+            ? { icon: (validated as any).icon }
+            : {}),
         },
       });
     },

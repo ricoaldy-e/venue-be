@@ -5,7 +5,7 @@ import {
 } from "./validators/fieldSchema.js"
 
 type ID = number | string
-interface CreateFieldArgs { stadionId: number; name: string; description?: string; pricePerHour: number; images?: {imageUrl: string}[]; status?: Status }
+interface CreateFieldArgs { stadionId: number; name: string; description?: string; pricePerHour?: number; images?: {imageUrl: string}[]; status?: Status }
 interface UpdateFieldArgs extends CreateFieldArgs { fieldId: ID }
 interface DeleteFieldArgs { fieldId: ID }
 interface FieldsArgs { stadionId?: ID }
@@ -53,7 +53,7 @@ export const fieldResolvers = {
       return prisma.field.create({
         data: {
           stadionId: Number(stadionId),
-          name, description: description ?? null, pricePerHour,
+          name, description: description ?? null, pricePerHour: pricePerHour ?? 0,
           status: status ?? 'ACTIVE',
           images: images ? { create: images.map((img) => ({ imageUrl: img.imageUrl })) } : undefined,
         },
@@ -77,12 +77,22 @@ export const fieldResolvers = {
 
       return prisma.$transaction(async (tx) => {
         if (images) await tx.imageField.deleteMany({ where: { fieldId: Number(fieldId) } })
+        
+        const updateData: any = {
+          stadionId, 
+          name, 
+          description, 
+          status: status || undefined,
+          images: images ? { create: images.map((img) => ({ imageUrl: img.imageUrl })) } : undefined,
+        }
+        
+        if (pricePerHour !== undefined) {
+          updateData.pricePerHour = pricePerHour ?? 0
+        }
+        
         return tx.field.update({
           where: { id: Number(fieldId) },
-          data: {
-            stadionId, name, description, pricePerHour, status: status || undefined,
-            images: images ? { create: images.map((img) => ({ imageUrl: img.imageUrl })) } : undefined,
-          },
+          data: updateData,
           include: { images: true, bookingDetails: true },
         })
       })

@@ -37,9 +37,9 @@ export const fieldCreateSchema = yup
       .number()
       .typeError("Harga per jam harus berupa angka")
       .integer("Harga per jam harus bilangan bulat")
-      .positive("Harga per jam harus lebih besar dari 0")
+      .min(0, "Harga tidak boleh negatif")
       .max(5000000, "Harga per jam terlalu besar")
-      .required("Harga per jam wajib diisi"),
+      .default(0),
     images: yup
       .array()
       .of(imageSchema)
