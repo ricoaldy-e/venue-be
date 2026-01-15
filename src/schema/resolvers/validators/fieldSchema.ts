@@ -69,4 +69,4 @@ export const fieldDeleteSchema = yup.object({
     .matches(/^\d+$/, "fieldId harus berupa string angka")
     .required("fieldId wajib diisi"),
 })
-.strict(true);
+  .strict(true);
