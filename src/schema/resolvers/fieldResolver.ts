@@ -5,7 +5,7 @@ import {
 } from "./validators/fieldSchema.js"
 
 type ID = number | string
-interface CreateFieldArgs { stadionId: number; name: string; description?: string; pricePerHour?: number; images?: {imageUrl: string}[]; status?: Status }
+interface CreateFieldArgs { stadionId: number; name: string; description?: string; pricePerHour?: number; priceTendik?: number; images?: { imageUrl: string }[]; status?: Status }
 interface UpdateFieldArgs extends CreateFieldArgs { fieldId: ID }
 interface DeleteFieldArgs { fieldId: ID }
 interface FieldsArgs { stadionId?: ID }
@@ -20,9 +20,9 @@ export const fieldResolvers = {
   Query: {
     fields: async (_: unknown, args: FieldsArgs, { prisma }: ResolverContext) => {
       return prisma.field.findMany({
-        where: { 
+        where: {
           ...(args.stadionId ? { stadionId: Number(args.stadionId) } : {}),
-          deletedAt: null 
+          deletedAt: null
         },
         include: { images: true, bookingDetails: true, Stadion: true },
       })
@@ -39,8 +39,8 @@ export const fieldResolvers = {
     createField: async (_: unknown, args: CreateFieldArgs, { prisma, admin }: ResolverContext) => {
       requireAuth(admin)
       const validated = await fieldCreateSchema.validate(args, { abortEarly: false })
-      const { stadionId, name, description, pricePerHour, images, status } = validated
-      
+      const { stadionId, name, description, pricePerHour, priceTendik, images, status } = validated
+
       const parentStadion = await prisma.stadion.findUnique({
         where: { id: Number(stadionId) },
         select: { status: true, deletedAt: true },
@@ -53,7 +53,10 @@ export const fieldResolvers = {
       return prisma.field.create({
         data: {
           stadionId: Number(stadionId),
-          name, description: description ?? null, pricePerHour: pricePerHour ?? 0,
+          name,
+          description: description ?? null,
+          pricePerHour: pricePerHour ?? 0,
+          priceTendik: priceTendik ?? 0,
           status: status ?? 'ACTIVE',
           images: images ? { create: images.map((img) => ({ imageUrl: img.imageUrl })) } : undefined,
         },
@@ -64,10 +67,10 @@ export const fieldResolvers = {
     updateField: async (_: unknown, args: UpdateFieldArgs, { prisma, admin }: ResolverContext) => {
       requireAuth(admin)
       const validated = await fieldUpdateSchema.validate(args, { abortEarly: false })
-      const { fieldId, stadionId, name, description, pricePerHour, images, status } = validated
+      const { fieldId, stadionId, name, description, pricePerHour, priceTendik, images, status } = validated
 
       const existing = await prisma.field.findFirst({ where: { id: Number(fieldId), deletedAt: null } })
-      if(!existing) throw new Error("Lapangan tidak ditemukan atau sudah dihapus.")
+      if (!existing) throw new Error("Lapangan tidak ditemukan atau sudah dihapus.")
 
       if (status === "ACTIVE") {
         const parent = await prisma.stadion.findUnique({ where: { id: Number(stadionId) }, select: { status: true, deletedAt: true } })
@@ -77,19 +80,22 @@ export const fieldResolvers = {
 
       return prisma.$transaction(async (tx) => {
         if (images) await tx.imageField.deleteMany({ where: { fieldId: Number(fieldId) } })
-        
+
         const updateData: any = {
-          stadionId, 
-          name, 
-          description, 
+          stadionId,
+          name,
+          description,
           status: status || undefined,
           images: images ? { create: images.map((img) => ({ imageUrl: img.imageUrl })) } : undefined,
         }
-        
+
         if (pricePerHour !== undefined) {
           updateData.pricePerHour = pricePerHour ?? 0
         }
-        
+        if (priceTendik !== undefined) {
+          updateData.priceTendik = priceTendik ?? 0
+        }
+
         return tx.field.update({
           where: { id: Number(fieldId) },
           data: updateData,
@@ -97,16 +103,16 @@ export const fieldResolvers = {
         })
       })
     },
-    
+
     deleteField: async (_: unknown, args: DeleteFieldArgs, { prisma, admin }: ResolverContext) => {
       requireAuth(admin)
       const validated = await fieldDeleteSchema.validate(args, { abortEarly: false })
 
       return prisma.field.update({
         where: { id: Number(validated.fieldId) },
-        data: { 
-            deletedAt: new Date(),
-            status: "INACTIVE"
+        data: {
+          deletedAt: new Date(),
+          status: "INACTIVE"
         },
         include: { images: true, bookingDetails: true },
       })

@@ -40,6 +40,13 @@ export const fieldCreateSchema = yup
       .min(0, "Harga tidak boleh negatif")
       .max(5000000, "Harga per jam terlalu besar")
       .default(0),
+    priceTendik: yup
+      .number()
+      .typeError("Harga Tendik harus berupa angka")
+      .integer("Harga Tendik harus bilangan bulat")
+      .min(0, "Harga tidak boleh negatif")
+      .max(5000000, "Harga Tendik terlalu besar")
+      .default(0),
     images: yup
       .array()
       .of(imageSchema)

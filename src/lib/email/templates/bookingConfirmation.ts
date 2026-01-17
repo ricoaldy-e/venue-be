@@ -24,7 +24,7 @@ interface BookingConfirmationData {
     email: string
     contact: string
     institution?: string
-    isAcademic: boolean
+    renterType: 'UMUM' | 'TENDIK' | 'AKADEMIK'
     totalPrice: number
     details: BookingDetail[]
     contactEmail: string
@@ -121,7 +121,7 @@ export const generateBookingConfirmationEmail = (booking: BookingConfirmationDat
                                     <td style="padding: 12px 0; color: #6b7280; font-size: 14px; width: 35%; vertical-align: top;">Nama Pemesan</td>
                                     <td style="padding: 12px 0; color: #1f2937; font-size: 14px; font-weight: 500;">${booking.name}</td>
                                 </tr>
-                                ${booking.isAcademic && booking.institution ? `
+                                ${booking.renterType !== 'UMUM' && booking.institution ? `
                                 <tr>
                                     <td style="padding: 12px 0; border-top: 1px solid #f3f4f6; color: #6b7280; font-size: 14px; vertical-align: top;">Institusi</td>
                                     <td style="padding: 12px 0; border-top: 1px solid #f3f4f6; color: #1f2937; font-size: 14px; font-weight: 500;">${booking.institution}</td>
@@ -156,7 +156,9 @@ export const generateBookingConfirmationEmail = (booking: BookingConfirmationDat
                                             <li style="margin-bottom: 6px;">Harap datang 15 menit sebelum waktu booking.</li>
                                             <li style="margin-bottom: 6px;">Tunjukkan kode booking kepada petugas.</li>
                                             <li style="margin-bottom: 6px;">Bawa kartu identitas yang valid.</li>
-                                            ${!booking.isAcademic ? '<li>Lakukan pembayaran di tempat sebelum mulai</li>' : ''}
+                                            ${booking.renterType === 'UMUM' ? '<li>Lakukan pembayaran di tempat sebelum mulai.</li>' : ''}
+                                            ${booking.renterType === 'TENDIK' ? '<li>Harga khusus Tenaga Kependidikan berlaku.</li>' : ''}
+                                            ${booking.renterType === 'AKADEMIK' ? '<li>Gratis untuk kegiatan Akademik.</li>' : ''}
                                         </ul>
                                     </td>
                                 </tr>

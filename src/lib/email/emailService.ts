@@ -19,7 +19,7 @@ export const initializeEmailService = () => {
     },
   })
 
-  console.log('✅ Email service initialized')
+
   return transporter
 }
 
@@ -38,9 +38,9 @@ export interface SendEmailOptions {
 
 export const sendEmail = async (options: SendEmailOptions): Promise<boolean> => {
   const emailTransporter = getEmailTransporter()
-  
+
   if (!emailTransporter) {
-    console.error('❌ Email service not configured. Cannot send email.')
+
     return false
   }
 
@@ -52,10 +52,9 @@ export const sendEmail = async (options: SendEmailOptions): Promise<boolean> => 
       html: options.html,
     })
 
-    console.log('✅ Email sent successfully:', info.messageId)
     return true
   } catch (error) {
-    console.error('❌ Failed to send email:', error)
+
     return false
   }
 }

@@ -22,7 +22,7 @@ interface BookingCancellationData {
     name: string
     email: string
     institution?: string
-    isAcademic: boolean
+    renterType: 'UMUM' | 'TENDIK' | 'AKADEMIK'
     details: BookingDetail[]
     contactEmail: string
     contactPhone: string
@@ -118,7 +118,7 @@ export const generateBookingCancellationEmail = (booking: BookingCancellationDat
                                     <td style="padding: 12px 0; color: #6b7280; font-size: 14px; width: 35%; vertical-align: top;">Nama Pemesan</td>
                                     <td style="padding: 12px 0; color: #1f2937; font-size: 14px; font-weight: 500;">${booking.name}</td>
                                 </tr>
-                                ${booking.isAcademic && booking.institution ? `
+                                ${booking.renterType !== 'UMUM' && booking.institution ? `
                                 <tr>
                                     <td style="padding: 12px 0; border-top: 1px solid #f3f4f6; color: #6b7280; font-size: 14px; vertical-align: top;">Institusi</td>
                                     <td style="padding: 12px 0; border-top: 1px solid #f3f4f6; color: #1f2937; font-size: 14px; font-weight: 500;">${booking.institution}</td>

@@ -16,6 +16,12 @@ export default gql`
     INACTIVE
   }
 
+  enum RenterType {
+    UMUM
+    TENDIK
+    AKADEMIK
+  }
+
   enum PaymentStatus {
     UNPAID
     PAID
@@ -54,6 +60,7 @@ export default gql`
     name: String!
     description: String
     pricePerHour: Int!
+    priceTendik: Int!
     status: Status!
     images: [ImageField!]
     bookingDetails: [BookingDetail!]
@@ -82,7 +89,8 @@ export default gql`
     email: String!
     institution: String
     suratUrl: String
-    isAcademic: Boolean!
+    renterType: RenterType!
+    sptjmUrl: String
     totalPrice: Int!
     status: BookingStatus!
     paymentStatus: PaymentStatus!
@@ -100,6 +108,37 @@ export default gql`
     subtotal: Int!
     createdAt: DateTime!
     Field: Field
+  }
+
+  type BookingSummary {
+    totalRevenue: Float!
+    totalCount: Int!
+    paidCount: Int!
+    unpaidCount: Int!
+    academicCount: Int!
+    nonAcademicCount: Int!
+    academicRevenue: Float!
+    nonAcademicRevenue: Float!
+    paidPercentage: Float!
+    averagePerBooking: Float!
+    approvedCount: Int!
+    cancelledCount: Int!
+    pendingCount: Int!
+  }
+  
+  type BookingPagination {
+    data: [Booking!]!
+    pagination: PaginationInfo!
+    summary: BookingSummary!
+  }
+
+  type PaginationInfo {
+    page: Int!
+    limit: Int!
+    total: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPrevPage: Boolean!
   }
 
   type OperatingHour {
@@ -166,7 +205,18 @@ export default gql`
     stadion(stadionId: ID!): Stadion
     fields(stadionId: ID): [Field!]
     field(fieldId: ID!): Field
-    bookings(stadionId: ID, date: DateTime, startDate: DateTime, endDate: DateTime): [Booking!]
+    bookings(
+      stadionId: ID
+      date: DateTime
+      startDate: DateTime
+      endDate: DateTime
+      status: BookingStatus
+      paymentStatus: PaymentStatus
+      search: String
+      page: Int
+      limit: Int
+      sortOrder: String
+    ): BookingPagination!
     booking(bookingCode: String!): Booking
     operatingHours: OperatingHour
     options: Option
@@ -216,7 +266,8 @@ export default gql`
       stadionId: Int!
       name: String!
       description: String
-      pricePerHour: Int
+      pricePerHour: Int!
+      priceTendik: Int
       images: [FieldImageInput!]
       status: Status
     ): Field!
@@ -226,7 +277,8 @@ export default gql`
       stadionId: Int!
       name: String!
       description: String
-      pricePerHour: Int
+      pricePerHour: Int!
+      priceTendik: Int
       images: [FieldImageInput!]
       status: Status
     ): Field!
@@ -241,7 +293,8 @@ export default gql`
       email: String!
       institution: String
       suratFile: Upload
-      isAcademic: Boolean
+      renterType: RenterType!
+      sptjmFile: Upload
       details: [BookingDetailInput!]!
       status: BookingStatus
       paymentStatus: PaymentStatus

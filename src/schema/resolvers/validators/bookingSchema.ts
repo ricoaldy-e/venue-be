@@ -13,16 +13,12 @@ export const createBookingSchema = yup.object({
   contact: yup.string().trim().required("Contact harus diisi"),
   email: yup.string().email("Email tidak valid").required("Email harus diisi"),
   institution: yup.string().nullable().notRequired(),
-  isAcademic: yup.boolean(),
+  renterType: yup.string().oneOf(["UMUM", "TENDIK", "AKADEMIK"]).default("UMUM"),
   status: yup.string().oneOf(["PENDING", "APPROVED", "CANCELLED", "DONE"]).notRequired(),
   paymentStatus: yup.string().oneOf(["PAID", "UNPAID"]).notRequired(),
-  // suratFile: yup.mixed().when("isAcademic", {
-  //   is: true,
-  //   then: (schema) => schema.required('Surat pengantar diperlukan untuk booking akademik'),
-  //   otherwise: (schema) => schema.notRequired(),
-  // }),
   suratFile: yup.mixed().notRequired(),
-  details: yup.array().of(bookingDetailSchema).min(1, "Mminimal 1 detail booking").required(),
+  sptjmFile: yup.mixed().required("Surat SPTJM wajib diunggah"),
+  details: yup.array().of(bookingDetailSchema).min(1, "Minimal 1 detail booking").required(),
 })
 
 export const updateBookingSchema = yup.object({
