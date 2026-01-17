@@ -16,6 +16,12 @@ export default gql`
     INACTIVE
   }
 
+  enum RenterType {
+    UMUM
+    TENDIK
+    AKADEMIK
+  }
+
   enum PaymentStatus {
     UNPAID
     PAID
@@ -54,6 +60,7 @@ export default gql`
     name: String!
     description: String
     pricePerHour: Int!
+    priceTendik: Int!
     status: Status!
     images: [ImageField!]
     bookingDetails: [BookingDetail!]
@@ -82,7 +89,8 @@ export default gql`
     email: String!
     institution: String
     suratUrl: String
-    isAcademic: Boolean!
+    renterType: RenterType!
+    sptjmUrl: String
     totalPrice: Int!
     status: BookingStatus!
     paymentStatus: PaymentStatus!
@@ -258,7 +266,8 @@ export default gql`
       stadionId: Int!
       name: String!
       description: String
-      pricePerHour: Int
+      pricePerHour: Int!
+      priceTendik: Int
       images: [FieldImageInput!]
       status: Status
     ): Field!
@@ -268,7 +277,8 @@ export default gql`
       stadionId: Int!
       name: String!
       description: String
-      pricePerHour: Int
+      pricePerHour: Int!
+      priceTendik: Int
       images: [FieldImageInput!]
       status: Status
     ): Field!
@@ -283,7 +293,8 @@ export default gql`
       email: String!
       institution: String
       suratFile: Upload
-      isAcademic: Boolean
+      renterType: RenterType!
+      sptjmFile: Upload
       details: [BookingDetailInput!]!
       status: BookingStatus
       paymentStatus: PaymentStatus

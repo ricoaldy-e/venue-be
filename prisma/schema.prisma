@@ -15,6 +15,12 @@ enum Status {
   INACTIVE
 }
 
+enum RenterType {
+  UMUM
+  TENDIK
+  AKADEMIK
+}
+
 model Stadion {
   id Int @id @default(autoincrement())
   name String
@@ -49,6 +55,7 @@ model Field {
   name String
   description String?
   pricePerHour Int
+  priceTendik Int @default(0)
   status Status @default(ACTIVE)
   deletedAt DateTime?
   images ImageField[]
@@ -92,7 +99,8 @@ model Booking {
   email String
   institution String?
   suratUrl String?
-  isAcademic Boolean @default(false)
+  renterType RenterType @default(UMUM)
+  sptjmUrl String?
   totalPrice Int
   status BookingStatus @default(PENDING)
   paymentStatus PaymentStatus  @default(UNPAID)

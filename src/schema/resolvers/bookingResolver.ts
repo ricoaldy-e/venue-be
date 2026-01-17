@@ -31,7 +31,8 @@ interface CreateBookingArgs {
     email: string
     institution?: string
     suratFile?: Upload
-    isAcademic?: boolean
+    renterType: 'UMUM' | 'TENDIK' | 'AKADEMIK'
+    sptjmFile?: Upload
     status?: BookingStatus
     details: BookingDetailInput[]
 }
@@ -178,20 +179,20 @@ export const bookingResolvers = {
                     where: { ...where, paymentStatus: 'UNPAID' }
                 }),
                 prisma.booking.aggregate({
-                    where: { ...where, isAcademic: true, paymentStatus: 'PAID' },
+                    where: { ...where, renterType: { in: ['AKADEMIK'] }, paymentStatus: 'PAID' },
                     _sum: { totalPrice: true },
                     _count: true
                 }),
                 prisma.booking.aggregate({
-                    where: { ...where, isAcademic: false, paymentStatus: 'PAID' },
+                    where: { ...where, renterType: { in: ['UMUM', 'TENDIK'] }, paymentStatus: 'PAID' },
                     _sum: { totalPrice: true },
                     _count: true
                 }),
                 prisma.booking.count({
-                    where: { ...where, isAcademic: true }
+                    where: { ...where, renterType: { in: ['AKADEMIK'] } }
                 }),
                 prisma.booking.count({
-                    where: { ...where, isAcademic: false }
+                    where: { ...where, renterType: { in: ['UMUM', 'TENDIK'] } }
                 }),
                 prisma.booking.count({ where: { ...where, status: 'APPROVED' } }),
                 prisma.booking.count({ where: { ...where, status: 'CANCELLED' } }),
@@ -246,13 +247,38 @@ export const bookingResolvers = {
     Mutation: {
         createBooking: async (_: unknown, args: CreateBookingArgs, { prisma }: ResolverContext) => {
             const validated = await createBookingSchema.validate(args, { abortEarly: false })
-            const { name, contact, email, institution, suratFile, isAcademic = false, details, status, paymentStatus } = validated
+            const { name, contact, email, institution, suratFile, sptjmFile, renterType = 'UMUM', details, status, paymentStatus } = validated
+
             let suratUrl = null;
-            let uploadedObjectName: string | null = null
+            let sptjmUrl = null;
+            let uploadedSuratObjectName: string | null = null
+            let uploadedSptjmObjectName: string | null = null
+
             if (!details || !Array.isArray(details) || details.length === 0) {
                 throw new Error("Detail booking harus diisi")
             }
-            if (suratFile) {
+
+            if (sptjmFile) {
+                let resolvedFile: any
+                try {
+                    if (typeof (sptjmFile as any).promise === 'function' || (sptjmFile as any).promise) {
+                        resolvedFile = await (sptjmFile as any).promise
+                    } else {
+                        resolvedFile = sptjmFile
+                    }
+                } catch (e) {
+                    throw new Error('Gagal memproses file SPTJM')
+                }
+                const mimetype = resolvedFile.mimetype || ''
+                if (!mimetype.includes('pdf')) {
+                    throw new Error('SPTJM harus berformat PDF')
+                }
+                const uploadResult = await uploadToMinio(resolvedFile, 'sptjm')
+                sptjmUrl = uploadResult.publicUrl
+                uploadedSptjmObjectName = uploadResult.objectName
+            }
+
+            if (suratFile && renterType !== 'UMUM') {
                 let resolvedFile: any
                 try {
                     if (typeof (suratFile as any).promise === 'function' || (suratFile as any).promise) {
@@ -269,8 +295,9 @@ export const bookingResolvers = {
                 }
                 const uploadResult = await uploadToMinio(resolvedFile, 'surat')
                 suratUrl = uploadResult.publicUrl
-                uploadedObjectName = uploadResult.objectName
+                uploadedSuratObjectName = uploadResult.objectName
             }
+
             const bookingCode = `DS-${uuidv4().split("-")[0]?.toUpperCase()}`
             const today = dayjs().startOf("day")
             const operatingHour = await prisma.operatingHour.findUnique({
@@ -280,6 +307,7 @@ export const bookingResolvers = {
             const closeHour = operatingHour?.closeHour ?? 21
             const minBookingHour = openHour
             const maxBookingHour = closeHour - 1
+
             const detailPayload = await Promise.all(
                 details.map(async (item) => {
                     const bookingDate = dayjs(item.bookingDate)
@@ -294,12 +322,21 @@ export const bookingResolvers = {
                     }
                     const field = await prisma.field.findUnique({
                         where: { id: item.fieldId },
-                        select: { pricePerHour: true },
+                        select: { pricePerHour: true, priceTendik: true },
                     })
                     if (!field) {
                         throw new Error("Field tidak ditemukan")
                     }
-                    const pricePerHour = item.pricePerHour ?? field.pricePerHour ?? 0
+
+                    let pricePerHour = 0
+                    if (renterType === 'AKADEMIK') {
+                        pricePerHour = 0
+                    } else if (renterType === 'TENDIK') {
+                        pricePerHour = item.pricePerHour ?? field.priceTendik ?? field.pricePerHour ?? 0
+                    } else {
+                        pricePerHour = item.pricePerHour ?? field.pricePerHour ?? 0
+                    }
+
                     const subtotal = item.subtotal ?? (pricePerHour * 1)
                     return {
                         fieldId: item.fieldId,
@@ -310,7 +347,9 @@ export const bookingResolvers = {
                     }
                 })
             )
-            const totalPrice = isAcademic ? 0 : detailPayload.reduce((acc, curr) => acc + curr.subtotal, 0)
+
+            const totalPrice = renterType === 'AKADEMIK' ? 0 : detailPayload.reduce((acc, curr) => acc + curr.subtotal, 0)
+
             try {
                 const booking = await prisma.booking.create({
                     data: {
@@ -320,7 +359,8 @@ export const bookingResolvers = {
                         email,
                         institution,
                         suratUrl,
-                        isAcademic,
+                        sptjmUrl,
+                        renterType,
                         totalPrice,
                         status: status ?? "PENDING",
                         paymentStatus: paymentStatus ?? "UNPAID",
@@ -350,7 +390,7 @@ export const bookingResolvers = {
                         email: booking.email,
                         contact: booking.contact,
                         institution: booking.institution || undefined,
-                        isAcademic: booking.isAcademic,
+                        renterType: booking.renterType,
                         totalPrice: booking.totalPrice,
                         details: booking.details,
                         contactEmail,
@@ -366,11 +406,19 @@ export const bookingResolvers = {
                 }
                 return booking
             } catch (err) {
-                if (typeof uploadedObjectName === 'string' && uploadedObjectName) {
+                // Cleanup uploaded files on error
+                if (typeof uploadedSptjmObjectName === 'string' && uploadedSptjmObjectName) {
                     try {
-                        await minioClient.removeObject(BUCKET, uploadedObjectName)
+                        await minioClient.removeObject(BUCKET, uploadedSptjmObjectName)
                     } catch (removeErr) {
-                        console.error('Failed to remove uploaded object after DB error:', removeErr)
+                        console.error('Failed to remove uploaded SPTJM after DB error:', removeErr)
+                    }
+                }
+                if (typeof uploadedSuratObjectName === 'string' && uploadedSuratObjectName) {
+                    try {
+                        await minioClient.removeObject(BUCKET, uploadedSuratObjectName)
+                    } catch (removeErr) {
+                        console.error('Failed to remove uploaded surat after DB error:', removeErr)
                     }
                 }
                 throw err
@@ -423,7 +471,7 @@ export const bookingResolvers = {
                         name: bookingBeforeCancel.name,
                         email: bookingBeforeCancel.email,
                         institution: bookingBeforeCancel.institution || undefined,
-                        isAcademic: bookingBeforeCancel.isAcademic,
+                        renterType: bookingBeforeCancel.renterType,
                         details: bookingBeforeCancel.details,
                         contactEmail,
                         contactPhone,

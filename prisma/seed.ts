@@ -14,6 +14,7 @@ type StadionSeed = {
     name: string
     description: string
     pricePerHour: number
+    priceTendik: number
     status?: Status
     images: string[]
   }>
@@ -96,6 +97,7 @@ async function main() {
           name: "Lapangan Utama",
           description: "Lapangan rumput sintetis standar nasional dengan kapasitas penonton besar.",
           pricePerHour: 250000,
+          priceTendik: 150000,
           status: "ACTIVE",
           images: [
             "https://images.unsplash.com/photo-1444491741275-3747c53c99b4?auto=format&fit=crop&w=1200&q=80",
@@ -106,6 +108,7 @@ async function main() {
           name: "Lapangan Pendukung",
           description: "Lapangan multi-fungsi untuk basket dan futsal dengan lantai vinyl premium.",
           pricePerHour: 180000,
+          priceTendik: 100000,
           status: "ACTIVE",
           images: [
             "https://images.unsplash.com/photo-1426024120108-99cc76989c71?auto=format&fit=crop&w=1200&q=80",
@@ -128,6 +131,7 @@ async function main() {
           name: "Lapangan Selatan",
           description: "Lapangan outdoor dengan rumput alami, cocok untuk latihan harian.",
           pricePerHour: 150000,
+          priceTendik: 80000,
           status: "ACTIVE",
           images: [
             "https://images.unsplash.com/photo-1478145046317-39f10e56b5e9?auto=format&fit=crop&w=1200&q=80",
@@ -137,7 +141,7 @@ async function main() {
     },
   ]
 
-  const allFields: Array<{ id: number; pricePerHour: number }> = []
+  const allFields: Array<{ id: number; pricePerHour: number; priceTendik: number }> = []
 
   for (const stadionSpec of stadionSeeds) {
     const stadion = await prisma.stadion.create({
@@ -178,6 +182,7 @@ async function main() {
           name: fieldSpec.name,
           description: fieldSpec.description,
           pricePerHour: fieldSpec.pricePerHour,
+          priceTendik: fieldSpec.priceTendik,
           status: fieldSpec.status ?? "ACTIVE",
           images: {
             create: fieldSpec.images.map((imageUrl) => ({ imageUrl })),
@@ -185,7 +190,7 @@ async function main() {
         },
       })
 
-      allFields.push({ id: field.id, pricePerHour: field.pricePerHour })
+      allFields.push({ id: field.id, pricePerHour: field.pricePerHour, priceTendik: field.priceTendik })
     }
   }
 
@@ -215,8 +220,16 @@ async function main() {
     const startHour = Math.min(20, 9 + dayOffset)
     bookingDate.setHours(startHour, 0, 0, 0)
 
-    const isAcademic = dayOffset % 3 === 0
+    const renterType = dayOffset % 3 === 0 ? 'AKADEMIK' : (dayOffset % 3 === 1 ? 'TENDIK' : 'UMUM')
     const bookingCode = `DS-SEED-${(dayOffset + 1).toString().padStart(3, "0")}`
+
+    // Calculate price based on renterType
+    let bookingPrice = targetField.pricePerHour
+    if (renterType === 'AKADEMIK') {
+      bookingPrice = 0
+    } else if (renterType === 'TENDIK') {
+      bookingPrice = targetField.priceTendik
+    }
 
     const booking = await prisma.booking.create({
       data: {
@@ -224,10 +237,11 @@ async function main() {
         name: `Seed User ${dayOffset + 1}`,
         contact: `08123${(456780 + dayOffset).toString()}`,
         email: `seeduser${dayOffset + 1}@example.com`,
-        institution: isAcademic ? "Universitas DipSport" : "Komunitas Olahraga",
-        suratUrl: isAcademic ? `https://example.com/uploads/surat-${dayOffset + 1}.pdf` : null,
-        isAcademic,
-        totalPrice: isAcademic ? 0 : targetField.pricePerHour,
+        institution: renterType !== 'UMUM' ? "Universitas DipSport" : null,
+        suratUrl: renterType !== 'UMUM' ? `https://example.com/uploads/surat-${dayOffset + 1}.pdf` : null,
+        sptjmUrl: `https://example.com/uploads/sptjm-${dayOffset + 1}.pdf`,
+        renterType,
+        totalPrice: bookingPrice,
         status: dayOffset % 2 === 0 ? "APPROVED" : "PENDING",
         paymentStatus: dayOffset % 2 === 0 ? "PAID" : "UNPAID",
         details: {
@@ -236,8 +250,8 @@ async function main() {
               fieldId: targetField.id,
               bookingDate,
               startHour,
-              pricePerHour: targetField.pricePerHour,
-              subtotal: targetField.pricePerHour,
+              pricePerHour: bookingPrice,
+              subtotal: bookingPrice,
             },
           ],
         },

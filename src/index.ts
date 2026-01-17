@@ -42,9 +42,6 @@ const normalizeGraphQLBody: express.RequestHandler = (req, _res, next) => {
       }
     }
 
-    if (entry.query && typeof entry.query === "object") {
-      console.log("Query payload type:", (entry.query as { kind?: string }).kind)
-    }
     if (entry.query && typeof entry.query === "object" && (entry.query as DocumentNode).kind === "Document") {
       try {
         entry.query = print(entry.query as DocumentNode)
@@ -97,5 +94,4 @@ initializeEmailService()
 initializeBookingReminderScheduler()
 
 app.listen(port, () => {
-  console.log(`Server ready at http://localhost:${port}/graphql`)
 })
