@@ -102,6 +102,37 @@ export default gql`
     Field: Field
   }
 
+  type BookingSummary {
+    totalRevenue: Float!
+    totalCount: Int!
+    paidCount: Int!
+    unpaidCount: Int!
+    academicCount: Int!
+    nonAcademicCount: Int!
+    academicRevenue: Float!
+    nonAcademicRevenue: Float!
+    paidPercentage: Float!
+    averagePerBooking: Float!
+    approvedCount: Int!
+    cancelledCount: Int!
+    pendingCount: Int!
+  }
+  
+  type BookingPagination {
+    data: [Booking!]!
+    pagination: PaginationInfo!
+    summary: BookingSummary!
+  }
+
+  type PaginationInfo {
+    page: Int!
+    limit: Int!
+    total: Int!
+    totalPages: Int!
+    hasNextPage: Boolean!
+    hasPrevPage: Boolean!
+  }
+
   type OperatingHour {
     id: ID!
     openHour: Int!
@@ -166,7 +197,18 @@ export default gql`
     stadion(stadionId: ID!): Stadion
     fields(stadionId: ID): [Field!]
     field(fieldId: ID!): Field
-    bookings(stadionId: ID, date: DateTime, startDate: DateTime, endDate: DateTime): [Booking!]
+    bookings(
+      stadionId: ID
+      date: DateTime
+      startDate: DateTime
+      endDate: DateTime
+      status: BookingStatus
+      paymentStatus: PaymentStatus
+      search: String
+      page: Int
+      limit: Int
+      sortOrder: String
+    ): BookingPagination!
     booking(bookingCode: String!): Booking
     operatingHours: OperatingHour
     options: Option
