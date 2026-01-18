@@ -34,6 +34,7 @@ async function main() {
     prisma.stadionFacility.deleteMany(),
     prisma.facility.deleteMany(),
     prisma.operatingHour.deleteMany(),
+    prisma.option.deleteMany(),
     prisma.admin.deleteMany(),
     prisma.stadion.deleteMany(),
   ])
@@ -205,6 +206,28 @@ async function main() {
       openHour: 8,
       closeHour: 22,
     },
+  })
+
+  await prisma.option.upsert({
+    where: { id: 1 },
+    create: {
+      name: 'Venue Undip',
+      description: 'Platform booking lapangan olahraga terpercaya untuk Sivitas Akademika Universitas Diponegoro.',
+      unitName: 'UPT Layanan Seni, Budaya dan Olahraga',
+      unitDesc: 'Desc UPT',
+      email: 'upt@email.com',
+      nohp: '08123456789',
+      address: 'Jl. Prof. Soedarto, Tembalang, Kec. Tembalang, Kota Semarang, Jawa Tengah'
+    },
+    update: {
+      name: 'Venue Undip',
+      description: 'Platform booking lapangan olahraga terpercaya untuk Sivitas Akademika Universitas Diponegoro.',
+      unitName: 'UPT Layanan Seni, Budaya dan Olahraga',
+      unitDesc: 'Desc UPT',
+      email: 'upt@email.com',
+      nohp: '08123456789',
+      address: 'Jl. Prof. Soedarto, Tembalang, Kec. Tembalang, Kota Semarang, Jawa Tengah'
+    }
   })
 
   if (allFields.length === 0) {

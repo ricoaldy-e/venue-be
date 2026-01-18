@@ -21,7 +21,7 @@ export const optionResolvers = {
   Mutation: {
     createOption: async(
       _: unknown, 
-      args: {name: string, description: string, email: string, nohp: string, address: string}, 
+      args: {name: string, description: string, email: string, nohp: string, address: string, unitName: string, unitDesc: string }, 
       {prisma, admin}: ResolverContext
     ) => {
       requireAuth(admin)
@@ -30,6 +30,8 @@ export const optionResolvers = {
         data: {
           name: validated.name,
           description: validated.description,
+          unitName: validated.unitName,
+          unitDesc: validated.unitDesc,
           email: validated.email,
           nohp: validated.nohp,
           address: validated.address
@@ -49,6 +51,8 @@ export const optionResolvers = {
         create: {
           name: validated.name,
           description: validated.description,
+          unitName: validated.unitName,
+          unitDesc: validated.unitDesc,
           email: validated.email,
           nohp: validated.nohp,
           address: validated.address
@@ -56,6 +60,8 @@ export const optionResolvers = {
         update: {
           name: validated.name,
           description: validated.description,
+          unitName: validated.unitName,
+          unitDesc: validated.unitDesc,
           email: validated.email,
           nohp: validated.nohp,
           address: validated.address

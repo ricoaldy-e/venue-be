@@ -151,6 +151,8 @@ export default gql`
     id: ID!
     name: String!
     description: String!
+    unitName: String!
+    unitDesc: String!
     email: String!
     nohp: String!
     address: String!
@@ -318,6 +320,8 @@ export default gql`
     createOption(
       name: String!
       description: String!
+      unitName: String!
+      unitDesc: String!
       email: String!
       nohp: String!
       address: String!
@@ -326,6 +330,8 @@ export default gql`
     updateOption(
       name: String!
       description: String!
+      unitName: String!
+      unitDesc: String!
       email: String!
       nohp: String!
       address: String!

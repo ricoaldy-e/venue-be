@@ -139,6 +139,8 @@ model Option {
   id Int @id @default(1)
   name String
   description String
+  unitName String
+  unitDesc String
   email String
   nohp String
   address String
