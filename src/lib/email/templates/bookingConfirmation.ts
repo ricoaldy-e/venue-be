@@ -29,6 +29,7 @@ interface BookingConfirmationData {
     details: BookingDetail[]
     contactEmail: string
     contactPhone: string
+    contactAddress?: string
 }
 
 export const generateBookingConfirmationEmail = (booking: BookingConfirmationData): string => {
@@ -180,7 +181,7 @@ export const generateBookingConfirmationEmail = (booking: BookingConfirmationDat
                                         <p style="margin: 0 0 8px 0; color: #1f2937; font-size: 14px; font-weight: 600;">Butuh Bantuan?</p>
                                         <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
                                             ${booking.contactPhone}<br>
-                                            ${booking.contactEmail}
+                                            ${booking.contactEmail}${booking.contactAddress ? `<br>${booking.contactAddress}` : ''}
                                         </p>
                                     </td>
                                 </tr>

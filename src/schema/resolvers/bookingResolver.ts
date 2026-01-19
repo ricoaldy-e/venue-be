@@ -383,6 +383,7 @@ export const bookingResolvers = {
                 const option = await prisma.option.findFirst({ where: { id: 1 } })
                 const contactEmail = option?.email ?? 'helpdesk@live.undip.ac.id'
                 const contactPhone = option?.nohp ?? '+62 851-6566-0339'
+                const contactAddress = option?.address ?? undefined
                 try {
                     const emailHtml = generateBookingConfirmationEmail({
                         bookingCode: booking.bookingCode,
@@ -395,6 +396,7 @@ export const bookingResolvers = {
                         details: booking.details,
                         contactEmail,
                         contactPhone,
+                        contactAddress,
                     })
                     await sendEmail({
                         to: booking.email,
@@ -465,6 +467,7 @@ export const bookingResolvers = {
                 const option = await prisma.option.findFirst({ where: { id: 1 } })
                 const contactEmail = option?.email ?? 'helpdesk@live.undip.ac.id'
                 const contactPhone = option?.nohp ?? '+62 851-6566-0339'
+                const contactAddress = option?.address ?? undefined
                 try {
                     const emailHtml = generateBookingCancellationEmail({
                         bookingCode: bookingBeforeCancel.bookingCode,
@@ -475,6 +478,7 @@ export const bookingResolvers = {
                         details: bookingBeforeCancel.details,
                         contactEmail,
                         contactPhone,
+                        contactAddress,
                     })
                     await sendEmail({
                         to: bookingBeforeCancel.email,

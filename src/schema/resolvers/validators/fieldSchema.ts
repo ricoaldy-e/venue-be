@@ -31,7 +31,7 @@ export const fieldCreateSchema = yup
     description: yup
       .string()
       .trim()
-      .max(1000, "Deskripsi maksimal 1000 karakter")
+      .max(400, "Deskripsi maksimal 400 karakter")
       .optional(),
     pricePerHour: yup
       .number()

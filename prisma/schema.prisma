@@ -24,7 +24,7 @@ enum RenterType {
 model Stadion {
   id Int @id @default(autoincrement())
   name String
-  description String?
+  description String? @db.Text
   mapUrl String
   status Status @default(ACTIVE)
   deletedAt DateTime?
@@ -53,7 +53,7 @@ model Field {
   id Int @id @default(autoincrement())
   stadionId Int
   name String
-  description String?
+  description String? @db.Text
   pricePerHour Int
   priceTendik Int @default(0)
   status Status @default(ACTIVE)
@@ -138,9 +138,10 @@ model OperatingHour {
 model Option {
   id Int @id @default(1)
   name String
-  description String
+  nameKet String @db.Text
+  description String @db.Text
   unitName String
-  unitDesc String
+  unitDesc String @db.Text
   email String
   nohp String
   address String

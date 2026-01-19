@@ -40,7 +40,7 @@ export const sendEmail = async (options: SendEmailOptions): Promise<boolean> => 
   const emailTransporter = getEmailTransporter()
 
   if (!emailTransporter) {
-
+    console.error('❌ Email service not configured. Cannot send email.')
     return false
   }
 
@@ -54,7 +54,7 @@ export const sendEmail = async (options: SendEmailOptions): Promise<boolean> => 
 
     return true
   } catch (error) {
-
+    console.error('❌ Failed to send email:', error)
     return false
   }
 }

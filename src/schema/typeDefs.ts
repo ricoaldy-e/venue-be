@@ -150,6 +150,7 @@ export default gql`
   type Option {
     id: ID!
     name: String!
+    nameKet: String!
     description: String!
     unitName: String!
     unitDesc: String!
@@ -319,6 +320,7 @@ export default gql`
 
     createOption(
       name: String!
+      nameKet: String!
       description: String!
       unitName: String!
       unitDesc: String!
@@ -329,6 +331,7 @@ export default gql`
 
     updateOption(
       name: String!
+      nameKet: String!
       description: String!
       unitName: String!
       unitDesc: String!

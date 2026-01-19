@@ -13,22 +13,23 @@ type ResolverContext = {
 
 export const optionResolvers = {
   Query: {
-    options: async(_: unknown, __:unknown, {prisma}: ResolverContext) => {
-      return prisma.option.findUnique({where: {id: 1}})
+    options: async (_: unknown, __: unknown, { prisma }: ResolverContext) => {
+      return prisma.option.findUnique({ where: { id: 1 } })
     }
   },
 
   Mutation: {
-    createOption: async(
-      _: unknown, 
-      args: {name: string, description: string, email: string, nohp: string, address: string, unitName: string, unitDesc: string }, 
-      {prisma, admin}: ResolverContext
+    createOption: async (
+      _: unknown,
+      args: { name: string, nameKet: string, description: string, email: string, nohp: string, address: string, unitName: string, unitDesc: string },
+      { prisma, admin }: ResolverContext
     ) => {
       requireAuth(admin)
-      const validated = await optionSchema.validate(args, {abortEarly: false})
+      const validated = await optionSchema.validate(args, { abortEarly: false })
       return prisma.option.create({
         data: {
           name: validated.name,
+          nameKet: validated.nameKet,
           description: validated.description,
           unitName: validated.unitName,
           unitDesc: validated.unitDesc,
@@ -39,17 +40,18 @@ export const optionResolvers = {
       })
     },
 
-    updateOption: async(
+    updateOption: async (
       _: unknown,
-      args: {name: string, description: string, email: string, nohp: string, address: string},
-      {prisma, admin} : ResolverContext
+      args: { name: string, nameKet: string, description: string, email: string, nohp: string, address: string, unitName: string, unitDesc: string },
+      { prisma, admin }: ResolverContext
     ) => {
       requireAuth(admin)
-      const validated = await optionSchema.validate(args, {abortEarly: false})
+      const validated = await optionSchema.validate(args, { abortEarly: false })
       return prisma.option.upsert({
-        where: {id: 1},
+        where: { id: 1 },
         create: {
           name: validated.name,
+          nameKet: validated.nameKet,
           description: validated.description,
           unitName: validated.unitName,
           unitDesc: validated.unitDesc,
@@ -59,6 +61,7 @@ export const optionResolvers = {
         },
         update: {
           name: validated.name,
+          nameKet: validated.nameKet,
           description: validated.description,
           unitName: validated.unitName,
           unitDesc: validated.unitDesc,
@@ -69,4 +72,4 @@ export const optionResolvers = {
       })
     }
   }
-} 
+}

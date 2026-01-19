@@ -12,19 +12,12 @@ dayjs.extend(timezone)
 dayjs.locale('id')
 
 export const initializeBookingReminderScheduler = () => {
-
   const cronSchedule = '0 10 * * *'
-
   cron.schedule(cronSchedule, async () => {
-
-
     try {
       const tomorrow = dayjs().tz('Asia/Jakarta').add(1, 'day').startOf('day')
       const tomorrowStart = tomorrow.toDate()
       const tomorrowEnd = tomorrow.endOf('day').toDate()
-
-
-
       const bookingsForTomorrow = await prisma.booking.findMany({
         where: {
           status: 'APPROVED',
@@ -55,16 +48,13 @@ export const initializeBookingReminderScheduler = () => {
           }
         }
       })
-
-
-
       if (bookingsForTomorrow.length === 0) {
         return
       }
-
       const option = await prisma.option.findFirst({ where: { id: 1 } })
       const contactEmail = option?.email ?? 'helpdesk@live.undip.ac.id'
       const contactPhone = option?.nohp ?? '+62 851-6566-0339'
+      const contactAddress = option?.address ?? undefined
 
       let successCount = 0
       let failCount = 0
@@ -83,6 +73,7 @@ export const initializeBookingReminderScheduler = () => {
             details: booking.details,
             contactEmail,
             contactPhone,
+            contactAddress,
           })
 
           const sent = await sendEmail({
@@ -96,34 +87,25 @@ export const initializeBookingReminderScheduler = () => {
           } else {
             failCount++
           }
-
           await new Promise(resolve => setTimeout(resolve, 1000))
-
         } catch (error) {
           failCount++
         }
       }
-
-
-
     } catch (error) {
+      console.error('❌ Error in booking reminder scheduler:', error)
     }
   }, {
     timezone: 'Asia/Jakarta'
   })
-
-
+  console.log('✅ Booking reminder scheduler initialized (10:00 WIB daily)')
 }
 
 export const testBookingReminderScheduler = async () => {
-
   try {
     const tomorrow = dayjs().tz('Asia/Jakarta').add(1, 'day').startOf('day')
     const tomorrowStart = tomorrow.toDate()
     const tomorrowEnd = tomorrow.endOf('day').toDate()
-
-
-
     const bookingsForTomorrow = await prisma.booking.findMany({
       where: {
         status: 'APPROVED',
@@ -155,8 +137,6 @@ export const testBookingReminderScheduler = async () => {
       }
     })
 
-
-
     if (bookingsForTomorrow.length === 0) {
       return
     }
@@ -164,6 +144,7 @@ export const testBookingReminderScheduler = async () => {
     const option = await prisma.option.findFirst({ where: { id: 1 } })
     const contactEmail = option?.email ?? 'helpdesk@live.undip.ac.id'
     const contactPhone = option?.nohp ?? '+62 851-6566-0339'
+    const contactAddress = option?.address ?? undefined
 
     for (const booking of bookingsForTomorrow) {
       const emailHtml = generateBookingReminderEmail({
@@ -178,6 +159,7 @@ export const testBookingReminderScheduler = async () => {
         details: booking.details,
         contactEmail,
         contactPhone,
+        contactAddress,
       })
 
       const sent = await sendEmail({
@@ -187,7 +169,6 @@ export const testBookingReminderScheduler = async () => {
       })
 
     }
-
   } catch (error) {
   }
 }
