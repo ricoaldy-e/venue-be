@@ -5,10 +5,10 @@ export default gql`
   scalar Upload
 
   enum BookingStatus {
-    PENDING
+    # PENDING # Disabled temporarily - can be re-enabled if needed
     APPROVED
     CANCELLED
-    DONE
+    # DONE # Disabled temporarily - can be re-enabled if needed
   }
 
   enum Status {
@@ -125,7 +125,8 @@ export default gql`
     averagePerBooking: Float!
     approvedCount: Int!
     cancelledCount: Int!
-    pendingCount: Int!
+    # pendingCount: Int! # Disabled temporarily - PENDING status disabled
+    pendingCount: Int! # Returns 0 - PENDING status disabled
   }
   
   type BookingPagination {

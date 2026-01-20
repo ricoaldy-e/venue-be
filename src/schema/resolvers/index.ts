@@ -49,8 +49,20 @@ const resolvers = {
     login: async (_: unknown, { email, password, turnstile }: { email: string; password: string, turnstile: string }, { prisma }: ResolverContext) => {
       const result = await verifyTurnstileToken(turnstile)
       if (!result.success) {
+        const codes = result["error-codes"] || []
+        if (codes.includes("timeout-or-duplicate")) {
+          throw new GraphQLError("CAPTCHA expired, please try again", {
+            extensions: { code: "UNAUTHENTICATED" }
+          })
+        }
+        if (codes.includes("invalid-input-response")) {
+          throw new GraphQLError("Invalid CAPTCHA token", {
+            extensions: { code: "UNAUTHENTICATED" }
+          })
+        }
+
         throw new GraphQLError("Invalid turnstile token", {
-          extensions: {code: "UNAUTHENTICATED"}
+          extensions: { code: "UNAUTHENTICATED" }
         })
       }
 

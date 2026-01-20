@@ -344,6 +344,7 @@ async function main() {
         sptjmUrl: `https://example.com/uploads/sptjm-${dayOffset + 1}.pdf`,
         renterType,
         totalPrice: bookingPrice,
+        // status: dayOffset % 2 === 0 ? "APPROVED" : "PENDING", // Original - PENDING disabled temporarily
         status: dayOffset % 2 === 0 ? "APPROVED" : "CANCELLED",
         paymentStatus: dayOffset % 2 === 0 ? "PAID" : "UNPAID",
         details: {

@@ -201,7 +201,8 @@ export const bookingResolvers = {
                 }),
                 prisma.booking.count({ where: { ...where, status: 'APPROVED' } }),
                 prisma.booking.count({ where: { ...where, status: 'CANCELLED' } }),
-                prisma.booking.count({ where: { ...where, status: 'PENDING' } }),
+                // prisma.booking.count({ where: { ...where, status: 'PENDING' } }), // Disabled temporarily - PENDING status
+                Promise.resolve(0), // Placeholder for pendingCount - PENDING status disabled
                 prisma.booking.count({ where: { ...where, renterType: 'UMUM' } }),
                 prisma.booking.count({ where: { ...where, renterType: 'TENDIK' } })
             ])
@@ -371,7 +372,8 @@ export const bookingResolvers = {
                         sptjmUrl,
                         renterType,
                         totalPrice,
-                        status: status ?? "PENDING",
+                        // status: status ?? "PENDING", // Disabled temporarily - PENDING status
+                        status: status ?? "APPROVED",
                         paymentStatus: paymentStatus ?? "UNPAID",
                         details: {
                             create: detailPayload,
