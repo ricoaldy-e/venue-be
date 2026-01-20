@@ -115,6 +115,8 @@ export default gql`
     totalCount: Int!
     paidCount: Int!
     unpaidCount: Int!
+    umumCount: Int!
+    tendikCount: Int!
     academicCount: Int!
     nonAcademicCount: Int!
     academicRevenue: Float!
@@ -215,6 +217,7 @@ export default gql`
       endDate: DateTime
       status: BookingStatus
       paymentStatus: PaymentStatus
+      renterType: RenterType
       search: String
       page: Int
       limit: Int

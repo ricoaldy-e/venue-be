@@ -19,6 +19,7 @@ interface BookingArgs {
     endDate?: Date
     status?: string
     paymentStatus?: string
+    renterType?: string
     search?: string
     page?: number
     limit?: number
@@ -65,7 +66,7 @@ type ResolverContext = {
 }
 
 function buildBookingWhereClause(args: BookingArgs) {
-    const { status, paymentStatus, search, stadionId, startDate, endDate, date } = args
+    const { status, paymentStatus, renterType, search, stadionId, startDate, endDate, date } = args
     const where: any = {}
     if (status) {
         where.status = status
@@ -89,7 +90,9 @@ function buildBookingWhereClause(args: BookingArgs) {
             }
         }
     }
-
+    if (renterType) {
+        where.renterType = renterType
+    }
     if (date) {
         const selectedDate = new Date(date)
         const startOfDay = new Date(selectedDate)
@@ -150,7 +153,9 @@ export const bookingResolvers = {
                 nonAcademicCount,
                 approvedCount,
                 cancelledCount,
-                pendingCount
+                pendingCount,
+                umumCount,
+                tendikCount
             ] = await Promise.all([
                 prisma.booking.findMany({
                     where,
@@ -196,7 +201,9 @@ export const bookingResolvers = {
                 }),
                 prisma.booking.count({ where: { ...where, status: 'APPROVED' } }),
                 prisma.booking.count({ where: { ...where, status: 'CANCELLED' } }),
-                prisma.booking.count({ where: { ...where, status: 'PENDING' } })
+                prisma.booking.count({ where: { ...where, status: 'PENDING' } }),
+                prisma.booking.count({ where: { ...where, renterType: 'UMUM' } }),
+                prisma.booking.count({ where: { ...where, renterType: 'TENDIK' } })
             ])
 
             const totalRevenue = paidAggregation._sum.totalPrice ?? 0
@@ -221,6 +228,8 @@ export const bookingResolvers = {
                     totalCount: total,
                     paidCount,
                     unpaidCount,
+                    umumCount,
+                    tendikCount,
                     academicCount,
                     nonAcademicCount,
                     academicRevenue,
