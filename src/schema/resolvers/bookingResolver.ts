@@ -1,5 +1,7 @@
 import type { BookingStatus, PaymentStatus, PrismaClient } from "@prisma/client"
 import dayjs from "dayjs"
+import utc from "dayjs/plugin/utc.js"
+import timezone from "dayjs/plugin/timezone.js"
 import { v4 as uuidv4 } from "uuid"
 import { requireAuth } from "../../lib/context.js"
 import { createBookingSchema, updateBookingSchema, updatePaymenStatusSchema, } from "./validators/bookingSchema.js"
@@ -10,6 +12,9 @@ import { sendEmail } from "../../lib/email/emailService.js"
 import { generateBookingConfirmationEmail } from "../../lib/email/templates/bookingConfirmation.js"
 import { generateBookingCancellationEmail } from "../../lib/email/templates/bookingCancellation.js"
 const DEFAULT_ACADEMIC_SURAT_URL = process.env.DEFAULT_ACADEMIC_SURAT_URL ?? "https://example.com/uploads/placeholder-surat.pdf"
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 interface BookingArgs {
     bookingCode: string
@@ -76,9 +81,9 @@ function buildBookingWhereClause(args: BookingArgs) {
     }
     if (search && search.trim()) {
         where.OR = [
-            { name: { contains: search, mode: 'insensitive' } },
-            { bookingCode: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } }
+            { name: { contains: search } },
+            { bookingCode: { contains: search } },
+            { email: { contains: search } }
         ]
     }
     if (stadionId) {
@@ -94,11 +99,8 @@ function buildBookingWhereClause(args: BookingArgs) {
         where.renterType = renterType
     }
     if (date) {
-        const selectedDate = new Date(date)
-        const startOfDay = new Date(selectedDate)
-        startOfDay.setUTCHours(0, 0, 0, 0)
-        const endOfDay = new Date(selectedDate)
-        endOfDay.setUTCHours(23, 59, 59, 999)
+        const startOfDay = dayjs(date).tz('Asia/Jakarta').startOf('day').toDate()
+        const endOfDay = dayjs(date).tz('Asia/Jakarta').endOf('day').toDate()
 
         if (where.details) {
             where.details.some = {
@@ -120,11 +122,11 @@ function buildBookingWhereClause(args: BookingArgs) {
         }
     }
     else if (startDate && endDate) {
-        const endDateTime = new Date(endDate)
-        endDateTime.setUTCHours(23, 59, 59, 999)
+        const start = dayjs(startDate).tz('Asia/Jakarta').startOf('day').toDate()
+        const end = dayjs(endDate).tz('Asia/Jakarta').endOf('day').toDate()
         where.createdAt = {
-            gte: new Date(startDate),
-            lte: endDateTime
+            gte: start,
+            lte: end
         }
     }
     return where
@@ -309,18 +311,18 @@ export const bookingResolvers = {
             }
 
             const bookingCode = `DS-${uuidv4().split("-")[0]?.toUpperCase()}`
-            const today = dayjs().startOf("day")
+            const today = dayjs().tz('Asia/Jakarta').startOf("day")
             const operatingHour = await prisma.operatingHour.findUnique({
                 where: { id: 1 },
             })
-            const openHour = operatingHour?.openHour ?? 8
-            const closeHour = operatingHour?.closeHour ?? 21
+            const openHour = operatingHour?.openHour ?? 6
+            const closeHour = operatingHour?.closeHour ?? 22
             const minBookingHour = openHour
             const maxBookingHour = closeHour - 1
 
             const detailPayload = await Promise.all(
                 details.map(async (item) => {
-                    const bookingDate = dayjs(item.bookingDate)
+                    const bookingDate = dayjs(item.bookingDate).tz('Asia/Jakarta')
                     if (bookingDate.isBefore(today.add(1, "day"))) {
                         throw new Error("Maksimal booking harus dilakukan minimal H-1")
                     }
@@ -419,7 +421,6 @@ export const bookingResolvers = {
                 }
                 return booking
             } catch (err) {
-                // Cleanup uploaded files on error
                 if (typeof uploadedSptjmObjectName === 'string' && uploadedSptjmObjectName) {
                     try {
                         await minioClient.removeObject(BUCKET, uploadedSptjmObjectName)

@@ -50,7 +50,7 @@ export const fieldCreateSchema = yup
     images: yup
       .array()
       .of(imageSchema)
-      .max(10, "Maksimal 10 gambar")
+      .max(5, "Maksimal 5 gambar")
       .optional()
       .nullable(),
     status: yup

@@ -103,7 +103,6 @@ export const availableIcons: FacilityIconOption[] = [
   { name: "Customer Service 24/7", value: "heroicons:phone" },
   { name: "Resepsionis / Front Desk", value: "lucide:contact" },
   { name: "Informasi / Info Desk", value: "lucide:info" },
-  { name: "Walk-in Welcome", value: "lucide:door-open" },
   { name: "Loket Tiket", value: "heroicons:ticket" },
 
   { name: "Coaching / Pelatih", value: "lucide:user-check" },
@@ -122,7 +121,6 @@ export const availableIcons: FacilityIconOption[] = [
   { name: "Fasilitas Premium", value: "heroicons:sparkles" },
   { name: "Bersertifikat", value: "heroicons:academic-cap" },
   { name: "Award Winning", value: "lucide:award" },
-  { name: "VIP Lounge / Ruang VIP", value: "heroicons:sparkles" },
 
   { name: "Kolam Renang", value: "lucide:waves" },
   { name: "Lapangan Multifungsi", value: "lucide:layout-grid" },
@@ -153,7 +151,14 @@ export const availableIcons: FacilityIconOption[] = [
 
 export const VALID_FACILITY_ICONS = availableIcons.map(
   (i) => i.value
-) as readonly string[]; 
+) as readonly string[];
+
+export const availableIconsWithId = availableIcons.map((icon, idx) => ({
+  id: `icon-${String(idx + 1).padStart(3, '0')}`,
+  ...icon,
+}));
+
+export default availableIconsWithId;
 
 export const facilityCreateSchema = yup.object({
   name: yup
