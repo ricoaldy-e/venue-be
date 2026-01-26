@@ -42,23 +42,39 @@ export const generateBookingConfirmationEmail = (booking: BookingConfirmationDat
         return acc
     }, {} as Record<string, typeof booking.details>)
 
+    const uniqueStadions = Array.from(new Set(booking.details.map(d => d.Field?.Stadion?.name).filter(Boolean)))
+    const stadionName = uniqueStadions.join(', ') || 'Stadion'
+
+    const uniqueFields = Array.from(new Set(booking.details.map(d => d.Field?.name).filter(Boolean)))
+    const fieldName = uniqueFields.join(', ') || 'Lapangan'
+
     const firstDetail = booking.details[0]
-    const stadionName = firstDetail?.Field?.Stadion?.name || 'Stadion'
-    const fieldName = firstDetail?.Field?.name || 'Lapangan'
     const mapUrl = firstDetail?.Field?.Stadion?.mapUrl || '#'
 
     const bookingDetailsHtml = Object.entries(detailsByDate).map(([dateKey, details]) => {
         const formattedDate = dayjs(dateKey).format('dddd, DD MMMM YYYY')
-        const timeSlots = details
-            .sort((a, b) => a.startHour - b.startHour)
-            .map(d => `${String(d.startHour).padStart(2, '0')}:00-${String(d.startHour + 1).padStart(2, '0')}:00`)
-            .join(', ')
+
+        // Group by field within the date
+        const detailsByField = details.reduce((acc, detail) => {
+            const fname = detail.Field?.name || 'Lapangan'
+            if (!acc[fname]) acc[fname] = []
+            acc[fname].push(detail)
+            return acc
+        }, {} as Record<string, typeof booking.details>)
+
+        const fieldDetailsHtml = Object.entries(detailsByField).map(([fname, fieldDetails]) => {
+            const timeSlots = fieldDetails
+                .sort((a, b) => a.startHour - b.startHour)
+                .map(d => `${String(d.startHour).padStart(2, '0')}:00-${String(d.startHour + 1).padStart(2, '0')}:00`)
+                .join(', ')
+            return `<div style="margin-top: 4px;"><span style="color: #4b5563; font-weight: 500;">${fname}:</span> <span style="color: #6b7280;">${timeSlots}</span></div>`
+        }).join('')
 
         return `
       <tr>
-        <td style="padding: 8px 0; color: #374151; font-size: 15px; line-height: 1.6;">
+        <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; color: #374151; font-size: 15px; line-height: 1.6;">
           <strong style="color: #1f2937;">${formattedDate}</strong><br>
-          <span style="color: #6b7280;">${timeSlots}</span>
+          ${fieldDetailsHtml}
         </td>
       </tr>
     `
@@ -156,8 +172,7 @@ export const generateBookingConfirmationEmail = (booking: BookingConfirmationDat
                                         <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 14px; line-height: 1.7;">
                                             <li style="margin-bottom: 6px;">Harap datang 15 menit sebelum waktu booking.</li>
                                             <li style="margin-bottom: 6px;">Tunjukkan kode booking kepada petugas.</li>
-                                            <li style="margin-bottom: 6px;">Bawa kartu identitas yang valid.</li>
-                                            ${booking.renterType === 'UMUM' ? '<li>Lakukan pembayaran di tempat sebelum mulai.</li>' : ''}
+                                            ${booking.renterType === 'UMUM' ? '<li>Lakukan pembayaran dengan menhubungi operator atau datang ke venue terkait sebelum mulai.</li>' : ''}
                                             ${booking.renterType === 'TENDIK' ? '<li>Harga khusus Tenaga Kependidikan berlaku.</li>' : ''}
                                             ${booking.renterType === 'AKADEMIK' ? '<li>Gratis untuk kegiatan Akademik.</li>' : ''}
                                         </ul>
