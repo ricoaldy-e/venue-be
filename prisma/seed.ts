@@ -21,7 +21,7 @@ type StadionSeed = {
 }
 
 async function main() {
-  console.log("🚀 Seeding database with UNDIP venue data...")
+  console.log("🚀 Seeding database with VENUE UNDIP data...")
 
   console.log("♻️ Clearing existing data...")
   await prisma.$transaction([
@@ -39,31 +39,31 @@ async function main() {
     prisma.stadion.deleteMany(),
   ])
 
-  const defaultPassword = "admin123"
-  const passAdminVenue = "operatorvenue333"
-  const hashedPassword = await bcrypt.hash(defaultPassword, 10)
-  const hashPassAdminVenue = await bcrypt.hash(passAdminVenue, 10)
+  const passAdminVenue = "adminvenue333"
+  const passOperatorVenue = "operatorvenue333"
+  const hashedPassAdminVenue = await bcrypt.hash(passAdminVenue, 10)
+  const hashedPassOperatorVenue = await bcrypt.hash(passOperatorVenue, 10)
 
   const [admin, admin2, admin3] = await Promise.all([
     prisma.admin.create({
       data: {
-        name: "Super Admin",
+        name: "Admin",
         email: "admin@venueundip.com",
-        password: hashPassAdminVenue,
+        password: hashedPassAdminVenue,
       },
     }),
     prisma.admin.create({
       data: {
-        name: "Operator Venue 1",
-        email: "operator1@undip.ac.id",
-        password: hashedPassword,
+        name: "Operator Venue",
+        email: "operator@undip.ac.id",
+        password: hashedPassOperatorVenue,
       },
     }),
     prisma.admin.create({
       data: {
         name: "Operator Venue 2",
         email: "operator2@undip.ac.id",
-        password: hashedPassword,
+        password: hashedPassOperatorVenue,
       },
     }),
   ])
@@ -97,7 +97,7 @@ async function main() {
   const stadionSeeds: StadionSeed[] = [
     {
       name: "Stadion Diponegoro",
-      description: "Stadion utama Universitas Diponegoro yang terletak di kawasan Kampus Tembalang. Stadion ini memiliki fasilitas lengkap dengan lintasan atletik standar nasional, tribun penonton berkapasitas besar, serta lapangan sepak bola berstandar FIFA. Ideal untuk kegiatan olahraga akademik, pertandingan antar fakultas, dan event kampus berskala besar.",
+      description: "Stadion utama Universitas Diponegoro dengan fasilitas lengkap termasuk lintasan atletik, lapangan sepak bola FIFA, dan tribun penonton.",
       mapUrl: "https://maps.app.goo.gl/QdBzYVwUvkKN8nQp6",
       status: "ACTIVE",
       facilityNames: ["Area Parkir", "Ruang Ganti", "Toilet & Kamar Mandi", "WiFi Gratis", "Tribun Penonton", "Lampu Sorot"],
@@ -109,7 +109,7 @@ async function main() {
       fields: [
         {
           name: "Lapangan Sepak Bola Utama",
-          description: "Lapangan sepak bola dengan rumput sintetis berkualitas tinggi, dilengkapi dengan gawang standar FIFA dan sistem drainase modern. Cocok untuk pertandingan resmi dan latihan tim sepak bola kampus.",
+          description: "Lapangan sepak bola standar FIFA dengan rumput sintetis dan gawang FIFA berkualitas.",
           pricePerHour: 300000,
           priceTendik: 180000,
           status: "ACTIVE",
@@ -120,7 +120,7 @@ async function main() {
         },
         {
           name: "Lintasan Atletik",
-          description: "Lintasan atletik 400 meter dengan permukaan tartan berkualitas, dilengkapi fasilitas untuk lompat jauh, lompat tinggi, dan lempar lembing. Ideal untuk latihan dan kompetisi atletik.",
+          description: "Lintasan atletik 400 meter dengan fasilitas untuk lompat jauh, tinggi, dan lempar lembing.",
           pricePerHour: 200000,
           priceTendik: 120000,
           status: "ACTIVE",
@@ -132,7 +132,7 @@ async function main() {
     },
     {
       name: "GOR Undip Tembalang",
-      description: "Gedung Olahraga (GOR) indoor Universitas Diponegoro yang terletak di area Kampus Tembalang. Dilengkapi dengan lapangan multi-fungsi untuk berbagai cabang olahraga indoor seperti badminton, basket, futsal, dan voli. Fasilitas AC dan pencahayaan modern memberikan kenyamanan optimal untuk beraktivitas.",
+      description: "Gedung Olahraga indoor dengan lapangan multi-fungsi untuk badminton, basket, futsal, dan voli.",
       mapUrl: "https://maps.app.goo.gl/QdBzYVwUvkKN8nQp6",
       status: "ACTIVE",
       facilityNames: ["Area Parkir", "Ruang Ganti", "Toilet & Kamar Mandi", "WiFi Gratis", "Sound System", "Kantin"],
@@ -144,7 +144,7 @@ async function main() {
       fields: [
         {
           name: "Lapangan Badminton 1",
-          description: "Lapangan badminton standar BWF dengan lantai vinyl premium dan pencahayaan optimal. Dilengkapi net berkualitas tinggi dan area bebas yang luas.",
+          description: "Lapangan badminton standar BWF dengan lantai vinyl premium dan pencahayaan optimal.",
           pricePerHour: 100000,
           priceTendik: 60000,
           status: "ACTIVE",
@@ -154,7 +154,7 @@ async function main() {
         },
         {
           name: "Lapangan Badminton 2",
-          description: "Lapangan badminton standar BWF dengan spesifikasi sama seperti Lapangan 1. Ideal untuk latihan rutin maupun pertandingan.",
+          description: "Lapangan badminton standar BWF dengan lantai vinyl premium dan pencahayaan optimal.",
           pricePerHour: 100000,
           priceTendik: 60000,
           status: "ACTIVE",
@@ -164,7 +164,7 @@ async function main() {
         },
         {
           name: "Lapangan Basket Indoor",
-          description: "Lapangan basket ukuran penuh dengan lantai parkit, ring basket standar FIBA, dan papan skor elektronik. Cocok untuk pertandingan dan latihan tim basket.",
+          description: "Lapangan basket standar FIBA dengan lantai parkit dan ring basket berkualitas.",
           pricePerHour: 200000,
           priceTendik: 120000,
           status: "ACTIVE",
@@ -174,7 +174,7 @@ async function main() {
         },
         {
           name: "Lapangan Futsal",
-          description: "Lapangan futsal dengan lantai vinyl berkualitas, gawang standar FIFA, dan pencahayaan merata. Kapasitas penonton hingga 200 orang.",
+          description: "Lapangan futsal dengan lantai vinyl dan gawang FIFA berkualitas, kapasitas penonton 200 orang.",
           pricePerHour: 180000,
           priceTendik: 100000,
           status: "ACTIVE",
@@ -186,7 +186,7 @@ async function main() {
     },
     {
       name: "Lapangan Tenis Undip",
-      description: "Kompleks lapangan tenis outdoor Universitas Diponegoro dengan 4 lapangan berstandar ITF. Terletak di area Kampus Tembalang dengan pemandangan hijau yang asri. Dilengkapi dengan tribun penonton, area istirahat, dan fasilitas pendukung lengkap.",
+      description: "Kompleks lapangan tenis outdoor dengan 4 lapangan standar ITF, tribun penonton, dan fasilitas pendukung.",
       mapUrl: "https://maps.app.goo.gl/QdBzYVwUvkKN8nQp6",
       status: "ACTIVE",
       facilityNames: ["Area Parkir", "Toilet & Kamar Mandi", "Tribun Penonton", "Lampu Sorot"],
@@ -198,7 +198,7 @@ async function main() {
       fields: [
         {
           name: "Lapangan Tenis 1 (Hard Court)",
-          description: "Lapangan tenis dengan permukaan hard court yang memberikan pantulan bola konsisten. Dilengkapi net berkualitas dan garis lapangan yang jelas.",
+          description: "Lapangan tenis hard court dengan pantulan bola konsisten dan net berkualitas tinggi.",
           pricePerHour: 80000,
           priceTendik: 50000,
           status: "ACTIVE",
@@ -208,7 +208,7 @@ async function main() {
         },
         {
           name: "Lapangan Tenis 2 (Hard Court)",
-          description: "Lapangan tenis standar ITF dengan permukaan hard court berkualitas. Cocok untuk latihan maupun pertandingan.",
+          description: "Lapangan tenis standar ITF dengan hard court berkualitas untuk latihan dan pertandingan.",
           pricePerHour: 80000,
           priceTendik: 50000,
           status: "ACTIVE",
@@ -281,7 +281,7 @@ async function main() {
     },
     create: {
       id: 1,
-      openHour: 7,
+      openHour: 6,
       closeHour: 22,
     },
   })
@@ -294,9 +294,9 @@ async function main() {
       description: 'Platform booking lapangan olahraga terpercaya untuk Sivitas Akademika Universitas Diponegoro. Menyediakan berbagai fasilitas olahraga berkualitas dengan proses reservasi yang mudah dan cepat.',
       unitName: 'UPT Layanan Seni, Budaya dan Olahraga',
       unitDesc: 'Unit Pelaksana Teknis yang mengelola fasilitas seni, budaya, dan olahraga di lingkungan Universitas Diponegoro',
-      email: 'upt.sbor@undip.ac.id',
-      nohp: '+6285165660339',
-      address: 'Gedung Rektorat Lt. 1, Jl. Prof. Soedarto SH, Tembalang, Semarang 50275'
+      email: 'helpdesk@undip.ac.id',
+      nohp: '+62 851 6566 0339',
+      address: 'Jl. Prof. Soedarto, Tembalang, Kec. Tembalang, Kota Semarang, Jawa Tengah'
     },
     update: {
       name: 'VENUE UNDIP',
@@ -304,9 +304,9 @@ async function main() {
       description: 'Platform booking lapangan olahraga terpercaya untuk Sivitas Akademika Universitas Diponegoro. Menyediakan berbagai fasilitas olahraga berkualitas dengan proses reservasi yang mudah dan cepat.',
       unitName: 'UPT Layanan Seni, Budaya dan Olahraga',
       unitDesc: 'Unit Pelaksana Teknis yang mengelola fasilitas seni, budaya, dan olahraga di lingkungan Universitas Diponegoro',
-      email: 'upt.sbor@undip.ac.id',
-      nohp: '+6285165660339',
-      address: 'Gedung Rektorat Lt. 1, Jl. Prof. Soedarto SH, Tembalang, Semarang 50275'
+      email: 'helpdesk@undip.ac.id',
+      nohp: '+62 851 6566 0339',
+      address: 'Jl. Prof. Soedarto, Tembalang, Kec. Tembalang, Kota Semarang, Jawa Tengah'
     }
   })
 
@@ -379,8 +379,8 @@ async function main() {
 
   console.log("✅ Stadions and fields seeded successfully!")
   console.log("📋 Sample bookings created:", bookingCodes)
-  console.log("🔐 Default admin password:", defaultPassword)
-  console.log("🔐 Super admin password:", passAdminVenue)
+  console.log("🔐 Admin Venue password:", passAdminVenue)
+  console.log("🔐 Operator Venue password:", passOperatorVenue)
 
 }
 

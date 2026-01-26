@@ -4,6 +4,15 @@ import { Status } from "@prisma/client";
 
 const statusValues = Object.values(Status);
 
+const imageSchema = yup.object({
+  imageUrl: yup
+    .string()
+    .trim()
+    .url("URL gambar harus valid")
+    .matches(/^https?:\/\//i, "URL gambar harus dimulai dengan http atau https")
+    .required("URL gambar wajib diisi"),
+}).strict(true);
+
 export const stadionCreateSchema = yup.object({
   name: yup
     .string()
@@ -37,6 +46,13 @@ export const stadionCreateSchema = yup.object({
     .optional()
     .nullable()
     .default(null),
+
+  images: yup
+    .array()
+    .of(imageSchema)
+    .max(5, "Maksimal 5 gambar")
+    .optional()
+    .nullable(),
 }).strict(true);
 
 export const stadionUpdateSchema = stadionCreateSchema.shape({

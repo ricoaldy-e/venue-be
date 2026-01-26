@@ -37,6 +37,7 @@ export default gql`
     fields: [Field!]
     images: [ImageStadion!]
     operatingHours: OperatingHour
+    bookingCount: Int
   }
 
   type StadionFacility {

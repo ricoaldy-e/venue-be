@@ -81,7 +81,6 @@ export const stadionImageResolvers = {
         if (objectName.startsWith(prefix)) {
           objectName = objectName.slice(prefix.length);
         } else {
-          // fallback: try to extract after bucket name
           const bucketMarker = `/${BUCKET}/`;
           const idx = img.imageUrl.indexOf(bucketMarker);
           if (idx !== -1) {
@@ -90,8 +89,6 @@ export const stadionImageResolvers = {
         }
 
         if (objectName) {
-          // best-effort remove from MinIO
-          // @ts-ignore
           await minioClient.removeObject(BUCKET, objectName);
         }
       } catch (e) {
@@ -155,8 +152,6 @@ export const fieldImageResolvers = {
         }
 
         if (objectName) {
-          // best-effort remove from MinIO
-          // @ts-ignore
           await minioClient.removeObject(BUCKET, objectName);
         }
       } catch (e) {

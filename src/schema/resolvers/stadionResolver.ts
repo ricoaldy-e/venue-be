@@ -8,7 +8,7 @@ import {
 
 type ID = number | string
 interface StadionArgs { stadionId: ID }
-interface CreateStadionArgs { name: string; description?: string; mapUrl: string; status?: Status; facilityIds?: number[] }
+interface CreateStadionArgs { name: string; description?: string; mapUrl: string; status?: Status; facilityIds?: number[]; images?: { imageUrl: string }[] }
 interface UpdateStadionArgs extends CreateStadionArgs { stadionId: ID }
 interface DeleteStadionArgs { stadionId: ID }
 
@@ -45,8 +45,8 @@ export const stadionResolvers = {
     createStadion: async (_: unknown, args: CreateStadionArgs, { prisma, admin }: ResolverContext) => {
       requireAuth(admin)
       const validated = await stadionCreateSchema.validate(args, { abortEarly: false })
-      const { name, description, mapUrl, status, facilityIds } = validated
-      
+      const { name, description, mapUrl, status, facilityIds, images } = validated
+
       return prisma.stadion.create({
         data: {
           name, description, mapUrl, status,
@@ -55,6 +55,7 @@ export const stadionResolvers = {
               Facility: { connect: { id: Number(facId) } },
             }))
           },
+          images: images ? { create: images.map((img) => ({ imageUrl: img.imageUrl })) } : undefined,
         },
         include: { fields: true, facilities: { include: { Facility: true } }, images: true },
       })
@@ -63,14 +64,15 @@ export const stadionResolvers = {
     updateStadion: async (_: unknown, args: UpdateStadionArgs, { prisma, admin }: ResolverContext) => {
       requireAuth(admin)
       const validated = await stadionUpdateSchema.validate(args, { abortEarly: false })
-      const { stadionId, name, description, mapUrl, status, facilityIds } = validated
+      const { stadionId, name, description, mapUrl, status, facilityIds, images } = validated
       const id = Number(stadionId)
       const existing = await prisma.stadion.findFirst({ where: { id, deletedAt: null } })
       if (!existing) throw new Error("Stadion tidak ditemukan atau sudah dihapus.")
 
       return prisma.$transaction(async (tx) => {
         await tx.stadionFacility.deleteMany({ where: { stadionId: id } })
-        
+        if (images) await tx.imageStadion.deleteMany({ where: { stadionId: id } })
+
         const updated = await tx.stadion.update({
           where: { id },
           data: {
@@ -80,6 +82,7 @@ export const stadionResolvers = {
                 Facility: { connect: { id: Number(facId) } },
               }))
             },
+            images: images ? { create: images.map((img) => ({ imageUrl: img.imageUrl })) } : undefined,
           },
           include: { fields: true, facilities: { include: { Facility: true } }, images: true },
         })
@@ -92,7 +95,7 @@ export const stadionResolvers = {
         return updated
       })
     },
-    
+
     deleteStadion: async (_: unknown, args: DeleteStadionArgs, { prisma, admin }: ResolverContext) => {
       requireAuth(admin)
       const validated = await stadionDeleteSchema.validate(args, { abortEarly: false })
@@ -101,14 +104,14 @@ export const stadionResolvers = {
         const now = new Date()
         await tx.field.updateMany({
           where: { stadionId: id },
-          data: { 
+          data: {
             deletedAt: now,
             status: "INACTIVE"
           }
         })
         return tx.stadion.update({
           where: { id },
-          data: { 
+          data: {
             deletedAt: now,
             status: "INACTIVE"
           },
@@ -120,6 +123,22 @@ export const stadionResolvers = {
 }
 
 export const stadionFieldResolvers = {
+  bookingCount: async (parent: any, _: unknown, { prisma }: ResolverContext) => {
+    return prisma.booking.count({
+      where: {
+        status: 'APPROVED',
+        details: {
+          some: {
+            Field: {
+              stadionId: parent.id,
+              status: 'ACTIVE',
+              deletedAt: null
+            }
+          }
+        }
+      }
+    })
+  },
   operatingHours: async (_: unknown, __: unknown, { prisma }: ResolverContext) => {
     return prisma.operatingHour.findUnique({ where: { id: 1 } })
   },
