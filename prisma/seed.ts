@@ -48,7 +48,7 @@ async function main() {
     prisma.admin.create({
       data: {
         name: "Admin",
-        email: "admin@venueundip.com",
+        email: "admin@undip.ac.id",
         password: hashedPassAdminVenue,
       },
     }),
@@ -125,7 +125,7 @@ async function main() {
           priceTendik: 120000,
           status: "ACTIVE",
           images: [
-            "https://images.unsplash.com/photo-1587893904903-4f37fa12a6ae?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=1200&q=80",
           ],
         },
       ],
@@ -149,7 +149,7 @@ async function main() {
           priceTendik: 60000,
           status: "ACTIVE",
           images: [
-            "https://images.unsplash.com/photo-1613918431703-aa50889e3be5?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=1200&q=80",
           ],
         },
         {
@@ -159,7 +159,7 @@ async function main() {
           priceTendik: 60000,
           status: "ACTIVE",
           images: [
-            "https://images.unsplash.com/photo-1613918431703-aa50889e3be5?auto=format&fit=crop&w=1200&q=80",
+            "https://images.unsplash.com/photo-1577223625816-7546f13df25d?auto=format&fit=crop&w=1200&q=80",
           ],
         },
         {
@@ -291,7 +291,7 @@ async function main() {
     create: {
       name: 'VENUE UNDIP',
       nameKet: 'Sistem Reservasi Fasilitas Olahraga Universitas Diponegoro',
-      description: 'Platform booking lapangan olahraga terpercaya untuk Sivitas Akademika Universitas Diponegoro. Menyediakan berbagai fasilitas olahraga berkualitas dengan proses reservasi yang mudah dan cepat.',
+      description: 'Platform booking lapangan olahraga terpercaya untuk Sivitas Akademika Universitas Diponegoro.',
       unitName: 'UPT Layanan Seni, Budaya dan Olahraga',
       unitDesc: 'Unit Pelaksana Teknis yang mengelola fasilitas seni, budaya, dan olahraga di lingkungan Universitas Diponegoro',
       email: 'helpdesk@undip.ac.id',
@@ -301,7 +301,7 @@ async function main() {
     update: {
       name: 'VENUE UNDIP',
       nameKet: 'Sistem Reservasi Fasilitas Olahraga Universitas Diponegoro',
-      description: 'Platform booking lapangan olahraga terpercaya untuk Sivitas Akademika Universitas Diponegoro. Menyediakan berbagai fasilitas olahraga berkualitas dengan proses reservasi yang mudah dan cepat.',
+      description: 'Platform booking lapangan olahraga terpercaya untuk Sivitas Akademika Universitas Diponegoro.',
       unitName: 'UPT Layanan Seni, Budaya dan Olahraga',
       unitDesc: 'Unit Pelaksana Teknis yang mengelola fasilitas seni, budaya, dan olahraga di lingkungan Universitas Diponegoro',
       email: 'helpdesk@undip.ac.id',
@@ -316,7 +316,7 @@ async function main() {
 
   const bookingCodes: string[] = []
 
-  for (let dayOffset = 0; dayOffset < 8; dayOffset++) {
+  for (let dayOffset = 0; dayOffset < 1; dayOffset++) {
     const targetField = allFields[dayOffset % allFields.length]
     const bookingDate = new Date()
     bookingDate.setDate(bookingDate.getDate() + dayOffset)

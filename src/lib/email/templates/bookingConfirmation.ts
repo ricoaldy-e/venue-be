@@ -172,7 +172,7 @@ export const generateBookingConfirmationEmail = (booking: BookingConfirmationDat
                                         <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 14px; line-height: 1.7;">
                                             <li style="margin-bottom: 6px;">Harap datang 15 menit sebelum waktu booking.</li>
                                             <li style="margin-bottom: 6px;">Tunjukkan kode booking kepada petugas.</li>
-                                            ${booking.renterType === 'UMUM' ? '<li>Lakukan pembayaran dengan menhubungi operator atau datang ke venue terkait sebelum mulai.</li>' : ''}
+                                            ${booking.renterType === 'UMUM' ? '<li>Lakukan pembayaran dengan menghubungi operator atau datang ke venue terkait sebelum mulai.</li>' : ''}
                                             ${booking.renterType === 'TENDIK' ? '<li>Harga khusus Tenaga Kependidikan berlaku.</li>' : ''}
                                             ${booking.renterType === 'AKADEMIK' ? '<li>Gratis untuk kegiatan Akademik.</li>' : ''}
                                         </ul>

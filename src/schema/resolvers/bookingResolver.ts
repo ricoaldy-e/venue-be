@@ -363,40 +363,59 @@ export const bookingResolvers = {
             const totalPrice = renterType === 'AKADEMIK' ? 0 : detailPayload.reduce((acc, curr) => acc + curr.subtotal, 0)
 
             try {
-                const booking = await prisma.booking.create({
-                    data: {
-                        bookingCode,
-                        name,
-                        contact,
-                        email,
-                        institution,
-                        suratUrl,
-                        sptjmUrl,
-                        renterType,
-                        totalPrice,
-                        // status: status ?? "PENDING", // Disabled temporarily - PENDING status
-                        status: status ?? "APPROVED",
-                        paymentStatus: paymentStatus ?? "UNPAID",
-                        details: {
-                            create: detailPayload,
+                const booking = await prisma.$transaction(async (tx) => {
+                    for (const item of detailPayload) {
+                        const existingBooking = await tx.bookingDetail.findFirst({
+                            where: {
+                                fieldId: item.fieldId,
+                                bookingDate: item.bookingDate,
+                                startHour: item.startHour
+                            }
+                        })
+
+                        if (existingBooking) {
+                            const dateStr = dayjs(item.bookingDate).tz('Asia/Jakarta').format('DD MMM YYYY')
+                            throw new Error(`Mohon maaf, jadwal Lapangan (ID: ${item.fieldId}) pada tanggal ${dateStr} jam ${item.startHour}:00 - ${item.startHour + 1}:00 sudah terisi oleh orang lain.`)
+                        }
+                    }
+
+                    return tx.booking.create({
+                        data: {
+                            bookingCode,
+                            name,
+                            contact,
+                            email,
+                            institution,
+                            suratUrl,
+                            sptjmUrl,
+                            renterType,
+                            totalPrice,
+                            // status: status ?? "PENDING", // Disabled temporarily - PENDING status
+                            status: status ?? "APPROVED",
+                            paymentStatus: paymentStatus ?? "UNPAID",
+                            details: {
+                                create: detailPayload,
+                            },
                         },
-                    },
-                    include: {
-                        details: {
-                            include: {
-                                Field: {
-                                    include: {
-                                        Stadion: true
+                        include: {
+                            details: {
+                                include: {
+                                    Field: {
+                                        include: {
+                                            Stadion: true
+                                        }
                                     }
                                 }
                             }
                         },
-                    },
+                    })
                 })
+
                 const option = await prisma.option.findFirst({ where: { id: 1 } })
                 const contactEmail = option?.email ?? 'helpdesk@live.undip.ac.id'
                 const contactPhone = option?.nohp ?? '+62 851-6566-0339'
                 const contactAddress = option?.address ?? undefined
+
                 try {
                     const emailHtml = generateBookingConfirmationEmail({
                         bookingCode: booking.bookingCode,
@@ -419,7 +438,9 @@ export const bookingResolvers = {
                 } catch (emailError) {
                     console.error('Failed to send confirmation email:', emailError)
                 }
+
                 return booking
+
             } catch (err) {
                 if (typeof uploadedSptjmObjectName === 'string' && uploadedSptjmObjectName) {
                     try {
