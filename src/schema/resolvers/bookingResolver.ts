@@ -95,7 +95,7 @@ function buildBookingWhereClause(args: BookingArgs) {
             }
         }
     }
-    if (renterType) {
+    if (renterType && renterType.trim()) {
         where.renterType = renterType
     }
     if (date) {
