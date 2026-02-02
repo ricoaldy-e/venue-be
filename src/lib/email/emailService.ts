@@ -46,7 +46,7 @@ export const sendEmail = async (options: SendEmailOptions): Promise<boolean> => 
 
   try {
     const info = await emailTransporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || 'VENUE UNDIP'}" <${process.env.EMAIL_USER}>`,
+      from: `"${process.env.EMAIL_FROM_NAME || 'VENUE UNDIP'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to: options.to,
       subject: options.subject,
       html: options.html,
