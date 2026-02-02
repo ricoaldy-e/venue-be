@@ -129,11 +129,25 @@ export default gql`
     # pendingCount: Int! # Disabled temporarily - PENDING status disabled
     pendingCount: Int! # Returns 0 - PENDING status disabled
   }
+
+  type FieldAnalytics {
+    fieldId: ID!
+    fieldName: String!
+    stadionId: ID!
+    stadionName: String!
+    totalCapacity: Int!
+    totalBooked: Int!
+    remaining: Int!
+    occupancyRate: Float!
+    statusLabel: String!
+    statusColor: String!
+  }
   
   type BookingPagination {
     data: [Booking!]!
     pagination: PaginationInfo!
     summary: BookingSummary!
+    fieldAnalytics: [FieldAnalytics!]
   }
 
   type PaginationInfo {

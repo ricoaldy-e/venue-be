@@ -70,6 +70,159 @@ type ResolverContext = {
     } | null
 }
 
+interface FieldAnalyticsResult {
+    fieldId: string
+    fieldName: string
+    stadionId: string
+    stadionName: string
+    totalCapacity: number
+    totalBooked: number
+    remaining: number
+    occupancyRate: number
+    statusLabel: string
+    statusColor: string
+}
+
+/**
+ * Menghitung analytics per-lapangan berdasarkan filter
+ * @param prisma
+ * @param where
+ * @param opHours
+ * @param singleDate
+ * @param startDate
+ * @param endDate
+ */
+async function calculateFieldAnalytics(
+    prisma: PrismaClient,
+    where: any,
+    opHours: { openHour: number; closeHour: number },
+    singleDate: Date | null,
+    startDate?: Date,
+    endDate?: Date
+): Promise<FieldAnalyticsResult[]> {
+    try {
+        const fields = await prisma.field.findMany({
+            where: { status: 'ACTIVE' },
+            include: {
+                Stadion: {
+                    select: { id: true, name: true, status: true }
+                }
+            }
+        })
+
+        const activeFields = fields.filter(f => f.Stadion?.status === 'ACTIVE')
+
+        if (activeFields.length === 0) {
+            return []
+        }
+
+        const hoursPerDay = opHours.closeHour - opHours.openHour
+
+        let totalDays = 1
+        if (singleDate) {
+            totalDays = 1
+        } else if (startDate && endDate) {
+            const start = dayjs(startDate).tz('Asia/Jakarta').startOf('day')
+            const end = dayjs(endDate).tz('Asia/Jakarta').startOf('day')
+            totalDays = end.diff(start, 'day') + 1
+            if (totalDays < 1) totalDays = 1
+        }
+
+        let dateFilter: any = {}
+        if (singleDate) {
+            const startOfDay = dayjs(singleDate).tz('Asia/Jakarta').startOf('day').toDate()
+            const endOfDay = dayjs(singleDate).tz('Asia/Jakarta').endOf('day').toDate()
+            dateFilter = {
+                bookingDate: {
+                    gte: startOfDay,
+                    lte: endOfDay
+                }
+            }
+        } else if (startDate && endDate) {
+            const start = dayjs(startDate).tz('Asia/Jakarta').startOf('day').toDate()
+            const end = dayjs(endDate).tz('Asia/Jakarta').endOf('day').toDate()
+            dateFilter = {
+                bookingDate: {
+                    gte: start,
+                    lte: end
+                }
+            }
+        }
+
+        const stadionIdFilter = where.details?.some?.Field?.stadionId
+
+        const isRangeMode = !singleDate && startDate && endDate
+
+        const results: FieldAnalyticsResult[] = []
+
+        for (const field of activeFields) {
+            if (stadionIdFilter && field.Stadion?.id !== stadionIdFilter) {
+                continue
+            }
+            const totalCapacity = hoursPerDay * totalDays
+            const bookedCount = await prisma.bookingDetail.count({
+                where: {
+                    fieldId: field.id,
+                    ...dateFilter,
+                    Booking: {
+                        status: 'APPROVED'
+                    }
+                }
+            })
+
+            const remaining = Math.max(0, totalCapacity - bookedCount)
+            const occupancyRate = totalCapacity > 0
+                ? Math.round((bookedCount / totalCapacity) * 100 * 100) / 100
+                : 0
+
+            let statusLabel: string
+            let statusColor: string
+
+            if (isRangeMode) {
+                if (bookedCount === 0) {
+                    statusLabel = 'Kosong (0 Jam)'
+                    statusColor = 'bg-gray-100 text-gray-600 border-gray-200'
+                } else if (occupancyRate > 80) {
+                    statusLabel = 'Sangat Sibuk'
+                    statusColor = 'bg-orange-100 text-orange-700 border-orange-200'
+                } else {
+                    statusLabel = `${bookedCount} Jam Terpakai`
+                    statusColor = 'bg-blue-50 text-blue-700 border-blue-200'
+                }
+            } else {
+                if (bookedCount >= totalCapacity) {
+                    statusLabel = 'Full Booked'
+                    statusColor = 'bg-red-100 text-red-700 border-red-200'
+                } else if (occupancyRate > 75) {
+                    statusLabel = 'Hampir Penuh'
+                    statusColor = 'bg-amber-100 text-amber-700 border-amber-200'
+                } else {
+                    statusLabel = 'Tersedia'
+                    statusColor = 'bg-green-100 text-green-700 border-green-200'
+                }
+            }
+
+            results.push({
+                fieldId: String(field.id),
+                fieldName: field.name,
+                stadionId: String(field.Stadion?.id ?? 0),
+                stadionName: field.Stadion?.name ?? 'Unknown',
+                totalCapacity,
+                totalBooked: bookedCount,
+                remaining,
+                occupancyRate,
+                statusLabel,
+                statusColor
+            })
+        }
+
+        return results
+    } catch (error) {
+        console.error('Error calculating field analytics:', error)
+        return []
+    }
+}
+
 function buildBookingWhereClause(args: BookingArgs) {
     const { status, paymentStatus, renterType, search, stadionId, startDate, endDate, date } = args
     const where: any = {}
@@ -216,6 +369,31 @@ export const bookingResolvers = {
             const paidPercentage = total > 0 ? (paidCount / total) * 100 : 0
             const averagePerBooking = paidCount > 0 ? totalRevenue / paidCount : 0
             const totalPages = Math.ceil(total / limitNum)
+
+            let fieldAnalytics: FieldAnalyticsResult[] | null = null
+            try {
+                const operatingHour = await prisma.operatingHour.findUnique({
+                    where: { id: 1 }
+                })
+                const opHours = {
+                    openHour: operatingHour?.openHour ?? 6,
+                    closeHour: operatingHour?.closeHour ?? 22
+                }
+
+                const filterMode = args.date ? 'daily' : 'range'
+
+                fieldAnalytics = await calculateFieldAnalytics(
+                    prisma,
+                    where,
+                    opHours,
+                    filterMode === 'daily' && args.date ? args.date : null,
+                    args.startDate,
+                    args.endDate
+                )
+            } catch (analyticsError) {
+                console.error('Failed to calculate field analytics:', analyticsError)
+            }
+
             return {
                 data,
                 pagination: {
@@ -242,7 +420,8 @@ export const bookingResolvers = {
                     approvedCount,
                     cancelledCount,
                     pendingCount
-                }
+                },
+                fieldAnalytics
             }
         },
         booking: async (_: unknown, { bookingCode }: BookingArgs, { prisma }: ResolverContext) => {
