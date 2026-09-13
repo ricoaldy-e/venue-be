@@ -5,3 +5,4 @@ node_modules
 /dist
 /prisma/seed.js
 /generated/prisma
+.vscode/
