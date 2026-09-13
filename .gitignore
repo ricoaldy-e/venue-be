@@ -6,3 +6,5 @@ node_modules
 /prisma/seed.js
 /generated/prisma
 .vscode/
+.DS_Store
+*.DS_Store
